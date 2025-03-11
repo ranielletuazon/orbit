@@ -1,0 +1,112 @@
+.container{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    background-color: #1c2120;
+    background-image: url('../../assets/background.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
+.page{
+    max-width: 2000px;
+    width: 100%;
+    height: auto;
+    background-repeat: no-repeat;
+    background-position: top;
+    background-size: 90%;
+    display: flex;
+    flex: wrap;
+    flex-direction: column;
+}
+
+.header{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+}
+
+.logo{
+    height: 50px;
+}
+
+.loginButton{
+    padding: 1rem 2rem;
+    background-color: white;
+    border-radius: 2rem;
+    cursor: pointer;
+    border: none;
+    font-size: 1rem;
+    color: black;
+    transition: all 0.2s ease-in-out;
+}
+
+.loginButton:hover{
+    background-color: rgb(218, 218, 218);
+}
+
+.content{
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    padding-top: 15em;
+    padding-left: 5em;
+
+    .contentHead{
+        width: 50%;
+        font-size: 3rem;
+        color: #2cc6ff;
+        font-weight: bold;
+    }
+
+    .contentBody{
+        font-size: 2rem;
+        text-align: justify;
+        color: white;
+        width: 50%;
+    }
+
+}
+
+@media screen and (max-width: 1000px) {
+    .content{
+        padding: 2rem;
+
+        .contentHead{
+            width: 100%;
+        }
+
+        .contentBody{
+            width: 100%;
+        }
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .content{
+        display: flex;
+        padding: 0rem;
+
+        .contentHead{
+            width: 100%;
+            font-size: 2rem;
+            color: #2cc6ff;
+            font-weight: bold;
+            text-align: center;
+        }
+    
+        .contentBody{
+            font-size: 1.5rem;
+            text-align: center;
+            color: white;
+            width: 100%;
+            padding: 1rem;
+        }
+    }
+}

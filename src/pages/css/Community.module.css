@@ -1,0 +1,144 @@
+
+.container{
+    background-color: hsl(0, 0%, 15%);
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.page{
+    max-width: 2000px;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pageContainer {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.content{
+    width: 100%;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.friendsHeader ,.pendingFriends, .requestsHeader{
+    width: 100%;
+    font-size: 2rem;
+    color: hsl(0, 0%, 50%);
+    padding: 1rem;
+    border-bottom: 1px solid hsl(0, 0%, 50%);
+}
+
+.friendCardbox ,.pendingCardbox, .requestCardbox{
+    width: 100%;
+    max-height: 40em; /* Change to max height */
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: .5rem;
+}
+
+.friendContent, .pendingContent, .requestContent{
+    width: 100%;
+    color: hsl(0, 0%, 50%);
+}
+
+.cardUserDisplay{
+    width: 100%;
+    height: 5em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+    transition: background-color .2s ease-in-out;
+
+    .profileSection{
+        width: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+
+        .profileDisplay{
+            width: 3.5em;
+            background-color: hsl(0, 0%, 5%);
+            height: 3.5em;
+            border-radius: 50%;
+            object-fit: cover;
+            outline: 1px solid grey;
+        }
+    
+        .profileName{
+            color: hsl(0, 0%, 50%);
+        }
+    }
+
+    .buttons{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+
+        .acceptButton, .removeButton{
+            border: none;
+            background: none;
+            padding: .5rem 1rem;
+            border-radius: 1rem;
+            cursor: pointer;
+        }
+
+        .acceptButton{
+            background-color: #2cc6ff;
+            color: white;
+        }
+
+        .removeButton{
+            background-color: hsl(0, 0%, 40%);
+            color: white;
+        }
+    }
+}
+
+.status{
+    font-size: .8rem;
+}
+
+.online{
+    color: hsl(120, 100%, 70%);
+}
+
+.offline{
+    color: hsl(0, 0%, 35%)
+}
+
+@media screen and (min-height: 1080px) {
+    .pageContainer {
+        height: 1080px;
+        width: 100%;
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .pageContainer{
+        flex-direction: column-reverse;
+    }
+
+    .content{
+        height: 100%;
+        overflow: auto;
+    }
+}
+

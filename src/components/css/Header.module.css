@@ -1,0 +1,123 @@
+.header{
+    padding: .5rem;
+    left: 0;
+    margin: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: hsl(0, 0%, 5%);
+    border-radius: 2rem;
+}
+
+.logo{
+    margin: 0.5rem;
+    width: 2em;
+    margin-bottom: 2rem;
+}
+
+.menubar{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    color: white;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profileLoad{
+    width: 2rem !important;
+    height: 2rem !important;
+    object-fit: cover;
+    background-color: hsl(0, 0%, 71%);
+    border-radius: 1rem;
+}
+
+.menus{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    gap: 2rem;
+}
+
+.menuButton{
+
+    border: none;
+    background: none;
+
+    i{
+        font-size: 1.5rem;
+        color: white;
+    }
+}
+
+.profileButton{
+    margin-bottom: .5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    border: 3px solid #2cc6ff;
+    background: none;
+
+    img{
+        width: 2rem !important;
+        height: 2rem !important;
+        object-fit: cover;
+        background-color: hsl(0, 0%, 15%);
+        border-radius: 50%;
+        transition: all .2s ease-in-out;
+    }
+    img:hover{
+        filter: brightness(50%);
+    }
+}
+
+@media screen and (max-width: 1000px) {
+    .menubar::-webkit-scrollbar{
+        display: none;
+    }
+    .menubar{
+        overflow: auto;
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .header{
+        width: 100%;
+        display: flex;
+        margin: 0rem;
+        flex-direction: row;
+        justify-content: space-between;
+        border-radius: 0;
+        align-items: center;
+        border: none;
+        background-color: hsl(0, 0%, 5%);
+
+    }
+
+    .menus{
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .menubar{
+        flex-direction: row;
+
+        width: 100%;
+    }
+
+    .logo{
+        width: 2em;
+        margin: 0 1rem 0 0;
+    }
+
+    .profileButton{
+        margin: 0.5rem;
+    }
+}
+
+
+

@@ -1,0 +1,504 @@
+:root {
+    --max-height: 100vh; /* Default fallback */
+}
+
+
+.container{
+    background-color: hsl(0, 0%, 15%);
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+
+.page{
+    max-width: 2000px;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pageContainer {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.main{
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 2rem 1rem 1rem;
+}
+
+.mainHeader{
+    width: 100%;
+    height: 5%;
+    margin: 0rem 0rem 1rem 0rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.intro{
+    font-size: 1.5rem;
+    color: #808080;
+}
+
+.sideButtons{
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
+
+.sideButtons button{
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.5rem;
+    background: hsl(0, 0%, 5%);
+    border: none;
+    color: white;
+    border-radius: 50%;
+}
+
+.gameSection{
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex: wrap;
+}
+
+.popular{
+    width: 45em;
+    height: 100%;
+    position: relative;
+    border-radius: 2rem;
+    background: rgb(38,38,38);
+    background: linear-gradient(60deg, rgb(32, 32, 32) 0%, rgba(128,128,128,1) 100%);
+    padding: 1.5rem;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}  
+
+.popularSection{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+.popularTag{
+    width: auto;
+    background-color: hsl(0, 100%, 90%);
+    color: hsl(0, 100%, 30%);
+    padding: .5rem 1.5rem;
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    justify-content: center;
+
+    i{
+        font-size: 1rem;
+        padding: 0;
+    }
+}
+
+.gameTitle{
+    color: white;
+    font-weight: bold;
+    font-size: 3rem;
+}
+
+.popularImage, .popularImage img{
+    position: absolute;
+    width: 25em;
+    height: 25em;
+    right: -11em;
+    bottom: 0;
+    filter: drop-shadow(rgba(0, 0, 0, 0.35) 0px 5px 15px);
+}
+
+.descriptionSection{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.description{
+    color: hsl(0, 0%, 70%);
+    width: 70%;
+    text-align: justify;
+    font-size: .8rem;
+}
+
+.playersSection{
+    width: 100%;
+    display: flex;
+    flex: wrap;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+}
+
+.playerCircles{
+    display: flex;
+    flex-direction: row;
+
+    .player{
+        width: 3.5em;
+        height: 3.5em;
+        border-radius: 50%;
+        background-color: #808080;
+        border: 1px solid black;
+    }
+}
+
+.playersInfo{
+    color: black;
+    height: 100%;
+    font-size: .8rem;
+    border-radius: 2rem;
+    background-color: white;
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.box{
+    width: 47%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.gameBox{
+    padding: 1rem;
+    border-radius: 10px;
+    width: 50%;
+    height: 100%;
+    background-color: hsl(0, 0%, 35%);
+    display: flex;
+    justify-content: flex-start;
+    gap: 5px;
+    position: relative;
+    flex-direction: column;
+    box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px;
+}
+
+.gameboximage{
+    width: 100%;
+    border-radius: 5px;
+    height: 15em;
+    object-fit: cover;
+}
+
+.gameboxtitle{
+    color: white;
+}
+
+.gameboxplayercount{
+    color: hsl(0, 0%, 70%);
+}
+
+.view{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin: 1rem;
+    background-color: hsl(0, 0%, 70%);
+    padding: .5rem 1rem;
+    border-radius: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .5rem;
+    color: hsl(0, 0%, 100%);
+    font-size: 1rem;
+    border: none;
+}
+
+.playerAdd, .acceptRequest, .pendingRequest, .playerFriended{
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    /* top: 50%;
+    transform: translateY(-50%); */
+    background: none;
+    margin: 1rem;
+    border: 1px solid white;
+    border-radius: 50%;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: hsl(0, 0%, 100%);
+    font-size: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    i{
+        font-size: 1rem;
+        position: absolute;
+    }
+}
+
+.acceptRequest{
+    background-color: #2cc6ff;
+    color: white;
+    border: none;
+}
+
+.pendingRequest{
+    background-color: #808080;
+    color: white;
+    border: none;
+}
+
+.userHeader{
+    width: 100%;
+    height: 5%;
+    margin: 1rem 0;
+    font-size: 1.5rem;
+    color: #808080;
+}
+
+.playerSection{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between ;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.playerDisplay{
+    width: 20em;
+    border-radius: 10px;
+    height: 100%;
+    background-color: hsl(0, 0%, 35%);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: flex;
+    position: relative;
+}
+
+.playerDescription{
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: absolute;
+    color: white;
+    bottom: 0;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    padding: 1rem;
+    font-size: 1rem;
+    width: 100%;
+    height: 30%;
+    background-color: rgba(36, 36, 36, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.statusDisplay{
+    position: absolute;
+    background-color: hsl(120, 100%, 50%);
+    border: 1px solid grey;
+    top: 0;
+    right: 0;
+    margin: 1rem;
+    padding: .5rem;
+    border-radius: 50%;
+}
+
+.sideBar{
+    position: absolute;
+    right: 0;
+    flex-direction: column;
+    background-color: hsl(0, 0%, 5%);
+    height: 100%;
+    width: 20em;
+    padding: 1rem;
+}
+
+.sideBarClose{
+    position: absolute;
+    border: none;
+    border-radius: 50%;
+    background: hsl(0, 0%, 5%);
+    left: -4rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 1.5rem;
+    
+    i{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: hsl(0, 0%, 70%);
+        opacity: 50%;
+        font-size: 2rem;
+    }
+}
+
+.sideBarHeader{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid hsl(0, 0%, 35%);
+
+    .sideBarTitle{
+        font-size: 2rem;
+        color: hsl(0, 0%, 70%);
+    }
+}
+
+.newNotif{
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: .8rem;
+    height: .8rem;
+    background-color: hsl(0, 100%, 70%);
+    border-radius: 50%;
+}
+
+
+@media screen and (max-width: 1600px) {
+    .main{
+        overflow: auto;
+    }
+}
+
+@media screen and (min-height: 1080px) {
+    .pageContainer {
+        height: 1080px;
+        width: 100%;
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 1600px) {
+    .main{
+        overflow: auto;
+        height: auto;
+    }
+    
+    .gameSection{
+        flex-direction: column;
+        height: auto;
+    }
+
+    .popular{
+        width: 100%;
+        height: auto;
+
+        .popularImage{
+            display: none;
+        }
+
+        .description{
+            width: 100%;
+        }
+    }
+
+    .box{
+        padding-top: 1rem;
+        width: 100%;
+        height: auto;
+
+        .gameBox{
+            gap: 0;
+        }
+
+        .view{
+            display: none;
+        }
+
+        .gameboximage{
+            height: 8em;
+            width: 100%;
+        }
+    }
+
+    @media screen and (max-width: 1000px) {
+        .playerSection{
+            flex-wrap: wrap;
+        }
+
+        .playerDisplay{
+            width: 100%;
+            height: 20em;
+        }
+    }
+
+
+    @media screen and (max-width: 500px) {
+        .intro {
+            font-size: 1rem;
+        }
+
+        .userHeader {
+            font-size: 1rem;
+        }
+
+        .main{
+            overflow: auto;
+            padding: 1rem 1rem 1rem 1rem;
+        }
+
+        .pageContainer{
+            flex-direction: column-reverse;
+        }
+    }
+
+    /* .popular{
+        width: 80%;
+    } */
+}
+
+@media screen and (max-width: 1440px) {
+    .playerDescription{
+        height: 50%;
+    }
+
+    @media screen and (max-width: 1024px) {
+
+        .playerAdd, .acceptRequest, .pendingRequest, .playerFriended{
+            padding: 1rem;
+
+            i{
+                font-size: .8rem;
+            }
+        }
+        
+    }
+}
+

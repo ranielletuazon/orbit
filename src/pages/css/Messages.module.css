@@ -1,0 +1,281 @@
+
+.container{
+    background-color: hsl(0, 0%, 15%);
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.page{
+    max-width: 2000px;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pageContainer {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.searchBar{
+    width: 100%;
+    background-color: hsl(0, 0%, 10%);
+    border: 1px solid hsl(0, 0%, 75%);
+    border-radius: 2rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+
+    i{
+        font-size: 1.5rem;
+        color: hsl(0, 0%, 75%);
+    }
+
+    input{
+        width: 100%;
+        font-size: 1rem;
+        color: hsl(0, 0%, 75%);
+        margin-left: 1rem;
+        border: none;
+        outline: none;
+        background: none;
+    }
+}
+
+.messages{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+
+    .userSection{
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+        border-right: 1px solid hsl(0, 0%, 50%);
+    }
+
+    .chatSection {
+        flex: 1;
+        border-right: 1px solid hsl(0, 0%, 50%);
+        transition: width 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .displaySection{
+        width: 25%;
+        position: relative;
+
+        .closeButton{
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+    }
+}
+
+.userCard{
+    border-radius: 5px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    width: 100%;
+    font-size: 1rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    color: hsl(0, 0%, 75%);
+    background: none;
+    border: none;
+}
+
+.upSection{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: .5rem;
+}
+
+.userIcon{
+    width: auto;
+}
+
+.userProfileImage{
+    background-color: hsl(0, 0%, 50%);
+    border-radius: 50%;
+    width: 3.5em;
+    height: 3.5em;
+    position: relative;
+
+    .iconStatus{
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 1rem;
+        height: 1rem;
+        outline: 5px solid hsl(0, 0%, 15%);
+        background-color: hsl(120, 100%, 50%);
+        border-radius: 50%;
+    }
+}
+   
+.userDiv{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+
+    .userName{
+        color: hsl(0, 0%, 75%);
+        text-align: start;
+    }
+}
+
+.lastMessageTime{
+    width: 30%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.downSection{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.lastMessage{
+    width: 100%;
+    text-align: start;
+}
+
+.unreadMessageCount{
+    position: absolute;
+    right: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    background-color: hsl(0, 100%, 60%);
+    border-radius: 50%;
+    color: white;
+}
+
+.chatHeader{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid hsl(0, 0%, 50%);
+    padding: 1rem 2rem;
+    gap: 2rem;
+    align-items: center;
+
+    button{
+        background: none;
+        border: none;
+        color: hsl(0, 0%, 50%);
+        i{
+            font-size: 1.5rem;
+        }
+    }
+}
+
+.chatBody{
+    width: 100%;
+    flex: 1;
+}
+
+.chatFooter{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+    border-top: 1px solid hsl(0, 0%, 50%);
+
+    .chatArea{
+        width: 80%;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        background-color: hsl(0, 0%, 10%);
+        border-radius: 2rem;
+        padding: 1rem;
+        gap: 1rem;
+
+        textarea{
+            max-height: 200px;
+            border: none;
+            flex: 1;
+            outline: none;
+            background: none;
+            resize: none;
+            font-size: 1rem;
+            color: hsl(0, 0%, 75%);
+        }
+
+        button{
+            background: none;
+            border: none;
+            color: hsl(0, 0%, 50%);
+            i{
+                font-size: 1.5rem;
+            }
+        }
+    }
+
+    button{
+        background: none;
+        border: none;
+        color: hsl(0, 0%, 50%);
+        i{
+            font-size: 1.5rem;
+        }
+    }
+}
+
+.sendButton{
+    background: none;
+    border: none;
+    i{
+        font-size: 1.5rem;
+        color: #2cc6ff
+    }
+}
+
+.sendButton:disabled{
+    cursor: not-allowed;
+    i{
+        color: hsl(0, 0%, 40%);
+    }
+}
+
+@media screen and (min-height: 1080px) {
+    .pageContainer {
+        height: 1080px;
+        width: 100%;
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .pageContainer{
+        flex-direction: column-reverse;
+    }
+}

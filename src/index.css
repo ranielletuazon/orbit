@@ -1,0 +1,42 @@
+:root {
+    --max-height: 100vh; /* Default fallback */
+}
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+    text-decoration: none;
+}
+
+html{
+    background-color: hsl(0, 0%, 15%);
+}
+
+.container{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    background-color: #1c2120;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
+.page{
+    max-width: 2000px;
+    width: 100%;
+    height: auto;
+    background-repeat: no-repeat;
+    background-position: top;
+    background-size: 90%;
+    display: flex;
+    flex-direction: column;
+}
+
+button {
+    cursor: pointer;
+}
+
