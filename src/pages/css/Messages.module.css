@@ -97,7 +97,6 @@
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: .5rem;
     color: hsl(0, 0%, 75%);
     background: none;
     border: none;
@@ -118,6 +117,7 @@
 }
 
 .userProfileImage{
+    object-fit: cover;
     background-color: hsl(0, 0%, 50%);
     border-radius: 50%;
     width: 3.5em;
@@ -154,9 +154,15 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: .8rem;
+}
+
+.userStatus{
+    font-size: .8rem;
 }
 
 .downSection{
+    margin-top: .8rem;
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -168,10 +174,12 @@
 .lastMessage{
     width: 100%;
     text-align: start;
+    font-size: 1rem;
 }
 
 .unreadMessageCount{
     position: absolute;
+    bottom: 0;
     right: 0;
     width: 1.5rem;
     height: 1.5rem;
@@ -312,6 +320,11 @@
     }
 }
 
+.noChatMessage{
+    width: 100%;
+    color: hsl(0, 0%, 50%);
+}
+
 .sendButton{
     background: none;
     border: none;
@@ -351,21 +364,19 @@
     .userSection {
         width: 100% !important;
         max-width: 100% !important;
-        border-right: none !important; 
+        border-right: none !important;
     }
 
-    .chatSection {
+    .chatSection { 
         width: 100% !important;  
         flex: none;  
+        border-right: none !important;
     }
 
     .chatHeader{
         gap: 1rem;
     }
 }
-
-
-
 
 @media screen and (max-width: 900px) {
     .userCard{
