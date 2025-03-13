@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns'; 
 import styles from "./css/Messages.module.css";
 import { auth, db, realtimeDb } from '../components/firebase/firebase';
@@ -15,11 +15,16 @@ export default function Messages({user}: {user: any}) {
     const [enableChat, setEnableChat] = useState(false);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768);
     const [fetchChatData, setFetchChatData] = useState<any[]>([]);
+    const chatBodyRef = useRef<HTMLDivElement | null>(null);
     const [message, setMessage] = useState('');
+    // Loading state
     const [isLoading, setIsLoading] = useState(true);
+    // State doc ref for currentUser
     const [currentUser, setCurrentUser] = useState<any>(null);
+    // State for conversationId
     const [conversationId, setConversationId] = useState<string>('');
-    const [friendId, setFriendId] = useState<string>('');
+    // State for friendId
+    const [friendId, setFriendId] = useState<any>(null);
     // Current chat data, selecting a chat will display this messages.
     const [currentChat, setCurrentChat] = useState<any[]>([]);
 
@@ -50,7 +55,6 @@ export default function Messages({user}: {user: any}) {
     }, [user]);
     useEffect(() => {
         if (fetchChatData.length === 0) return;
-    
         // Create an array to store unsubscribe functions
         const statusListeners = fetchChatData.map((friend) => {
             const statusRef = ref(realtimeDb, `users/${friend.friendID}/status`);
@@ -75,6 +79,7 @@ export default function Messages({user}: {user: any}) {
     const handleKeyDown = (e: any) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault(); 
+            handleSendMessage(e);
         }
     };
 
@@ -218,7 +223,17 @@ export default function Messages({user}: {user: any}) {
     const getCurrentChat = async (chatId: string, friendId: string) => {
         try {
             setConversationId(chatId);
-            setFriendId(friendId);
+            // Get friend doc reference instead just friendId
+            const friendRef = doc(db, "user", friendId);
+            const friendSnap = await getDoc(friendRef);
+
+            if (friendSnap.exists()) {
+                const friendData = friendSnap.data();
+                setFriendId(friendData);
+            } else {
+                return new Error("Friend not found");
+            }
+
             const fetchMessageDataRef = doc(db, 'userMessages', chatId);
             const fetchMessageSnapshot = await getDoc(fetchMessageDataRef); 
     
@@ -294,7 +309,7 @@ export default function Messages({user}: {user: any}) {
     
             // Update the "userChats" data field for both users 
             const selfChatRef = doc(db, "userChats", user.uid);
-            const friendChatRef = doc(db, "userChats", friendId); 
+            const friendChatRef = doc(db, "userChats", friendId.id); 
     
             const selfChatSnap = await getDoc(selfChatRef);
             const friendChatSnap = await getDoc(friendChatRef);
@@ -359,15 +374,27 @@ export default function Messages({user}: {user: any}) {
         }
     };    
 
+    // Always scroll to the latest
+    useEffect(() => {
+        if (chatBodyRef.current) {
+            chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+        }
+    }, [currentChat]);
+
     useEffect(() => {
         console.log(currentChat);
     }, [currentChat])
+
+    useEffect(() => {
+        if (friendId) {
+            console.log("Friend doc: ",friendId);
+        }
+    }, [friendId])
 
     return (
         <div className={styles.container}>
             <div className={styles.page}>
                 <div className={styles.pageContainer}>
-                    <Header user={user} />
                     <div className={styles.messages}>
                         {/* Show only userSection on mobile unless a chat is selected */}
                         {!userDisplay || !isMobileView ? (
@@ -426,30 +453,31 @@ export default function Messages({user}: {user: any}) {
                                                     <i className="fa-solid fa-chevron-left"></i>
                                                 </button>
                                             )}
-                                            <div className={styles.userProfileImage}>
-                                                <div className={styles.iconStatus}></div>
-                                            </div>
-                                            <div className={styles.userDiv}>
-                                                <div className={styles.userName}>Example User</div>
-                                            </div>
-                                            <button><i className="fa-solid fa-phone"></i></button>
-                                            <button onClick={() => setUserDisplay(false)}>
-                                                <i className="fa-solid fa-ellipsis-vertical" style={{ padding:"0rem 1rem" }}></i>
-                                            </button>
+                                            {friendId && 
+                                                <>
+                                                    <img src={friendId.profileImage} alt={`${friendId.username} profile image`} className={styles.userProfileImage}/>
+                                                    <div className={styles.userDiv}>
+                                                        <div className={styles.userName}>{friendId.username}</div>
+                                                    </div>
+                                                    <button><i className="fa-solid fa-phone"></i></button>
+                                                    <button onClick={() => setUserDisplay(false)}>
+                                                        <i className="fa-solid fa-ellipsis-vertical" style={{ padding:"0rem 1rem" }}></i>
+                                                    </button>
+                                                </>
+                                            }
                                         </div>
-                                        <div className={styles.chatBody}>
-                                            <div className={styles.chatBubbleReceiver}>
-                                                <div className={styles.message}>
-                                                    <div className={styles.text}>Hey, what's up?</div>
-                                                    <div className={styles.timeSent}>2h ago</div>
+                                        <div className={styles.chatBody} ref={chatBodyRef}>
+                                            {currentChat.map((msg, index) => (
+                                                <div
+                                                    key={index}
+                                                    className={msg.senderId === user.uid ? styles.chatBubbleReceiver : styles.chatBubbleSender}
+                                                >
+                                                    <div className={styles.message}>
+                                                        <div className={styles.text}>{msg.text}</div>
+                                                        <div className={styles.timeSent}>{getRelativeTime(msg.timeSent)}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className={styles.chatBubbleSender}>
-                                                <div className={styles.message}>
-                                                    <div className={styles.text}>Not much, just working on a project. You?</div>
-                                                    <div className={styles.timeSent}>2h ago</div>
-                                                </div>
-                                            </div>
+                                            ))}
                                         </div>
                                         <form onSubmit={handleSendMessage} className={styles.chatFooter}>
                                             <button><i className="fa-solid fa-paperclip"></i></button>
