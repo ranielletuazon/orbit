@@ -1,0 +1,185 @@
+
+.container{
+    background-color: hsl(0, 0%, 15%);
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.page{
+    max-width: 2000px;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pageContainer {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+.rocketSpace{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 2rem;
+}
+
+.maincard{
+    border-radius: 1rem;
+    height: 100%;
+    width: 30em;
+    background: url('../../assets/rocket.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    display: flex;
+    padding: 1rem;
+    opacity: 0;
+    animation: fade-in 1s ease-in forwards;
+}
+
+.closeSection{
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    .back{
+        border: none;
+        background: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        i{
+            font-size: 2rem;
+            color: hsl(0, 0%, 100%);
+        }
+    }
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.contentSection{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.introSection{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 2rem;
+
+    .title{
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2cc6ff;
+        text-align: center;
+    }
+
+    .body{
+        font-size: 1rem;
+        color: hsl(0, 0%, 75%);
+        text-align: center;
+    }
+}
+
+.formSection{
+    display: flex;
+    width: 100%;
+}
+
+.gameRow {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    position: relative;
+    padding: 0 2rem;
+
+    label {
+        color: hsl(0, 0%, 75%);
+    }
+    
+    .select {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 1rem;
+        font-size: 1rem;
+        font-weight: 400;
+        background-color: hsl(0, 0%, 15%);
+        border: none;
+        color: white;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1rem;
+        cursor: pointer;
+    }
+}
+
+.buttonSection{
+    display: flex;
+    width: 100%;
+    padding: 0 2rem;
+
+    button{
+        width: 100%;
+        padding: 1rem;
+        border-radius: 10px;
+        border: none;
+        background-color: #2cc6ff;
+        color: white;
+    }
+}
+
+@media screen and (min-height: 1080px) {
+    .pageContainer {
+        height: 1080px;
+        width: 100%;
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .pageContainer{
+        flex-direction: column-reverse;
+    }
+
+    .rocketSpace{
+        padding: 0;
+    }
+
+    .maincard{
+        width: 100%;
+        border-radius: 0;
+    }
+}

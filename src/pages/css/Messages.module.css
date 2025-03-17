@@ -217,6 +217,14 @@
     gap: 1rem;
     padding: .5rem 1rem;
 }
+.chatBody::-webkit-scrollbar, .additional::-webkit-scrollbar{
+    width: 0.5rem;
+}
+
+.chatBody::-webkit-scrollbar-thumb, .additional::-webkit-scrollbar-thumb{
+    background-color: hsl(0, 0%, 30%);
+    border-radius: 10px;
+}
 
 .chatFooter{
     width: 100%;
@@ -339,6 +347,29 @@
     i{
         color: hsl(0, 0%, 40%);
     }
+}
+
+.accessibility{
+    display: flex;
+    width: 100%;
+    flex-direction: row;;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+
+    .orbitLogo{
+        width: 2.5rem;
+    }
+
+    button{
+        background: none;
+        border: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+    }
+    
 }
 
 @media screen and (min-height: 1080px) {

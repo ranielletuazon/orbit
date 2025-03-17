@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import Community from './pages/Community';
 import Profile from './pages/Profile';
 import Messages from './pages/Messages';
+import Rocket from './pages/Rocket';
 
 import './App.css';
 
@@ -72,20 +73,13 @@ function App() {
     } else {
       // Set the user's status in Realtime Database
       try {
-        const username = currentUser?.username ?? "Unknown"; // Fallback to "Unknown" if undefined
-        const email = user.email ?? "N/A"; // Fallback to "N/A" if undefined
         const id = user.uid;
-          
         const db = getDatabase();
         const rdbUserRef = ref(db, `users/${id}`);
         const onDisconnectRef = onDisconnect(rdbUserRef);
 
         update(rdbUserRef, {
           status: "online",
-          username: username,
-          email: email,
-          id: id,
-          profileImage: currentUser?.profileImage,
         });
 
         onDisconnectRef.update({
@@ -111,6 +105,7 @@ function App() {
           <Route path='/profile' element={<ProtectedRoute><Profile user={user} currentUser={currentUser} /></ProtectedRoute>} />
           <Route path='/community' element={<ProtectedRoute><Community user={user} /></ProtectedRoute>} />
           <Route path='/messages' element={<ProtectedRoute><Messages user={user} /></ProtectedRoute>} />
+          <Route path='/rocket' element={<ProtectedRoute><Rocket user={user}/></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
       <Toaster

@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns'; 
 import styles from "./css/Messages.module.css";
 import { auth, db, realtimeDb } from '../components/firebase/firebase';
 import { doc, collection, getDocs, getDoc, setDoc, Timestamp, onSnapshot, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { onValue, update } from 'firebase/database';
 import { ref } from 'firebase/database';
-import Loader from '../components/loader';
+import orbit from '../assets/orbit.png';
 
+import Loader from '../components/loader';
 import Header from '../components/Header';
 
 export default function Messages({user}: {user: any}) {
 
+    const navigate = useNavigate();
     const [userDisplay, setUserDisplay] = useState(false);
     const [enableChat, setEnableChat] = useState(false);
     const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 768);
@@ -187,7 +190,7 @@ export default function Messages({user}: {user: any}) {
                     // Save to Firestore (Only if new data is added)
                     await updateDoc(chatRef, { chatsData: updatedChats });
                 } else {
-                    // **Sort by most recent message before setting state**
+                    // Sort by most recent message before setting state
                     existingChats.sort((a: any, b: any) => {
                         if (!a.createdAt || !b.createdAt) return 0;
                         return b.createdAt.seconds - a.createdAt.seconds;
@@ -213,7 +216,7 @@ export default function Messages({user}: {user: any}) {
         e.target.style.height = "auto"; 
         e.target.style.height = `${e.target.scrollHeight}px`; 
 
-        if(e.target.value.length >= 1){
+        if(e.target.value.length >= 1 && message.length >= 1) {
             setEnableChat(true);
         } else {
             setEnableChat(false);
@@ -223,56 +226,72 @@ export default function Messages({user}: {user: any}) {
     const getCurrentChat = async (chatId: string, friendId: string) => {
         try {
             setConversationId(chatId);
-            // Get friend doc reference instead just friendId
+    
+            // Get friend doc reference instead of just friendId
             const friendRef = doc(db, "user", friendId);
             const friendSnap = await getDoc(friendRef);
-
+    
             if (friendSnap.exists()) {
                 const friendData = friendSnap.data();
                 setFriendId(friendData);
             } else {
-                return new Error("Friend not found");
+                console.error("Friend not found");
+                return;
             }
-
-            const fetchMessageDataRef = doc(db, 'userMessages', chatId);
-            const fetchMessageSnapshot = await getDoc(fetchMessageDataRef); 
     
-            if (fetchMessageSnapshot.exists()) { 
-                // Initialize the doc 
+            // Reference to userMessages document
+            const fetchMessageDataRef = doc(db, "userMessages", chatId);
+    
+            // Check if the document exists
+            const fetchMessageSnapshot = await getDoc(fetchMessageDataRef);
+    
+            if (fetchMessageSnapshot.exists()) {
                 const messageData = fetchMessageSnapshot.data();
                 setCurrentChat(messageData.messages || []);
-                console.log("True")
-
-                setUserDisplay(true);
-
+                console.log("Existing chat found");
             } else {
-                // If not existing yet codeblock here
+                // If document doesn't exist, create it
                 await setDoc(fetchMessageDataRef, {
-                    messages:[]
+                    messages: [],
                 });
-
-                console.log("Message Data created")
-
-                // Update the state to an empty chat, since its a new conversation
+    
+                console.log("Message Data created");
+    
+                // Update state to an empty chat since it's a new conversation
                 setCurrentChat([]);
-
-                setUserDisplay(true);
             }
-            
-            // Update the seen status too
-            const chatRef = doc(db, "userChats", user.uid);
-            const chatSnap = await getDoc(chatRef);
-            if (chatSnap.exists()) {
-                const updatedChats = chatSnap.data().chatsData.map((chat: any) =>
+    
+            setUserDisplay(true);
+    
+            // Reset unread messages count for the current user
+            const userChatRef = doc(db, "userChats", user.uid);
+            const userChatSnap = await getDoc(userChatRef);
+    
+            if (userChatSnap.exists()) {
+                const updatedChats = userChatSnap.data().chatsData.map((chat: any) =>
                     chat.chatID === chatId ? { ...chat, unreadMessages: 0, seen: true } : chat
                 );
-                await updateDoc(chatRef, { chatsData: updatedChats });
+    
+                await updateDoc(userChatRef, { chatsData: updatedChats });
             }
-
+    
+            // Real-time listener for messages
+            const unsubscribeMessages = onSnapshot(fetchMessageDataRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const messageData = snapshot.data();
+                    setCurrentChat(messageData.messages || []);
+                } else {
+                    setCurrentChat([]);
+                }
+            });
+    
+            // Cleanup function to remove listener when component unmounts
+            return () => unsubscribeMessages();
+    
         } catch (e) {
             console.error("Error fetching chat:", e);
         }
-    };
+    };    
     
     // If this runs, the user will send a message in the particular doc ref and update that.
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -280,45 +299,51 @@ export default function Messages({user}: {user: any}) {
     
         try {
             // Validate required data
-            if (!currentChat || !conversationId || !message.trim()) {
+            if (!conversationId || !message.trim()) {
                 console.error("Error: Missing required data");
                 return;
             }
     
             const messageRef = doc(db, "userMessages", conversationId);
-            const messageSnap = await getDoc(messageRef);
-    
-            // Update the userMessages
             const newMessage = {
                 text: message.trim(),
                 senderId: user.uid,
                 timeSent: Timestamp.now(),
             };
+
+            setMessage(""); //Clear input after sending
     
+            // Check if the conversation already exists
+            const messageSnap = await getDoc(messageRef);
             if (messageSnap.exists()) {
-                // If the conversation exists, update the messages array
                 await updateDoc(messageRef, {
                     messages: arrayUnion(newMessage),
                 });
             } else {
-                // If the conversation does not exist, create it with the new message
                 await setDoc(messageRef, {
                     messages: [newMessage],
                 });
             }
     
-            // Update the "userChats" data field for both users 
+            // Update the "userChats" data for both users
             const selfChatRef = doc(db, "userChats", user.uid);
-            const friendChatRef = doc(db, "userChats", friendId.id); 
+            const friendChatRef = doc(db, "userChats", friendId.id);
     
             const selfChatSnap = await getDoc(selfChatRef);
             const friendChatSnap = await getDoc(friendChatRef);
     
+            // For self
             if (selfChatSnap.exists()) {
                 const selfChatData = selfChatSnap.data();
                 const updatedChatsData = selfChatData.chatsData.map((chat: any) =>
                     chat.chatID === conversationId
-                        ? { ...chat, recentMessage: message.trim(), senderId: user.uid, createdAt: Timestamp.now(), seen: true, }
+                        ? { 
+                            ...chat, 
+                            recentMessage: message.trim(), 
+                            senderId: user.uid, 
+                            createdAt: Timestamp.now(), 
+                            seen: true 
+                        }
                         : chat
                 );
     
@@ -327,18 +352,19 @@ export default function Messages({user}: {user: any}) {
                 });
             }
     
+            // for the receiver
             if (friendChatSnap.exists()) {
                 const friendChatData = friendChatSnap.data();
                 const updatedFriendChatsData = friendChatData.chatsData.map((chat: any) =>
                     chat.chatID === conversationId
-                        ? {
-                              ...chat,
-                              recentMessage: message.trim(),
-                              senderId: user.uid,
-                              unreadMessages: (chat.unreadMessages || 0) + 1, // Increment unread messages
-                              createdAt: Timestamp.now(),
-                              seen: false,
-                          }
+                        ? { 
+                            ...chat, 
+                            recentMessage: message.trim(), 
+                            senderId: user.uid, 
+                            unreadMessages: (chat.unreadMessages || 0) + 1, 
+                            createdAt: Timestamp.now(), 
+                            seen: false 
+                        }
                         : chat
                 );
     
@@ -355,19 +381,16 @@ export default function Messages({user}: {user: any}) {
                             username: currentUser.username || "Unknown",
                             recentMessage: message.trim(),
                             senderId: user.uid,
-                            unreadMessages: 1, // Since this is a new chat, 1 unread message only
+                            unreadMessages: 1,
                             createdAt: Timestamp.now(),
                             seen: false,
                         },
                     ],
                 };
-
+    
                 await setDoc(friendChatRef, newFriendChatData);
             }
-    
-            // Update state and clear input field
-            setCurrentChat((prevChat) => [...prevChat, newMessage]);
-            setMessage("");
+            
     
         } catch (e) {
             console.error("Error sending message:", e);
@@ -379,17 +402,8 @@ export default function Messages({user}: {user: any}) {
         if (chatBodyRef.current) {
             chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
         }
+
     }, [currentChat]);
-
-    useEffect(() => {
-        console.log(currentChat);
-    }, [currentChat])
-
-    useEffect(() => {
-        if (friendId) {
-            console.log("Friend doc: ",friendId);
-        }
-    }, [friendId])
 
     return (
         <div className={styles.container}>
@@ -401,9 +415,12 @@ export default function Messages({user}: {user: any}) {
                             <>
                                 {fetchChatData && !isLoading ? (
                                     <div className={styles.userSection}>
-                                        <div className={styles.searchBar}>
-                                            <i className="fa-solid fa-magnifying-glass"></i>
-                                            <input className={styles.searchInput} type="search" placeholder="Search..." />
+                                        <div className={styles.accessibility}>
+                                            <button onClick={() => navigate("/space")}><img src={orbit} alt="Logo" className={styles.orbitLogo}/></button>
+                                            <div className={styles.searchBar}>
+                                                <i className="fa-solid fa-magnifying-glass"></i>
+                                                <input className={styles.searchInput} type="search" placeholder="Search..." />
+                                            </div>
                                         </div>
                                         {fetchChatData.map((user, key) => (
                                             <button className={styles.userCard} onClick={() => getCurrentChat(user.chatID, user.friendID)} key={key}> {/* setUserDisplay(true); setCurrentChat(user); */}
@@ -419,7 +436,11 @@ export default function Messages({user}: {user: any}) {
                                                     <div className={styles.lastMessageTime}>{user.createdAt ? getRelativeTime(user.createdAt) : ""}</div>
                                                 </div>
                                                 <div className={styles.downSection} style={{ display: user.recentMessage ? "block" : "none" }}>
-                                                    <div className={styles.lastMessage}>{user.senderId === currentUser.id ? `You: ${user.recentMessage}` : user.recentMessage}</div>
+                                                    <div className={styles.lastMessage}>
+                                                        {user.senderId === currentUser.id 
+                                                            ? `You: ${user.recentMessage ? (user.recentMessage.length > 20 ? `${user.recentMessage.slice(0, 20)} . . .` : user.recentMessage) : ""}` 
+                                                            : user.recentMessage ? (user.recentMessage.length > 20 ? `${user.recentMessage.slice(0, 20)} . . .` : user.recentMessage) : ""}
+                                                    </div>
                                                     <div className={styles.unreadMessageCount} style={{ display: user.unreadMessages > 0 ? "block" : "none" }}>{user.unreadMessages}</div>
                                                 </div>
                                             </button>
@@ -507,3 +528,4 @@ export default function Messages({user}: {user: any}) {
         </div>
     );
 };
+
