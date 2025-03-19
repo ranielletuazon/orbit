@@ -91,7 +91,10 @@
 @media screen and (max-width: 560px) {
     .content{
         display: flex;
+        height: 100%;
         padding: 0rem;
+        justify-content: center;
+        align-items: center;
 
         .contentHead{
             width: 100%;
