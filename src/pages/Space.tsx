@@ -106,7 +106,13 @@ export default function Space({ user }: { user: any }) {
                 // }));
 
                 // Fetching the user documents from Firestore
-                const playersSnap = await getDocs(collection(db, "user"));
+                // Fail Safe Fetch Players
+                // const playersSnap = await getDocs(collection(db, "user"));
+
+                // Fixed - less than 10
+                const q = query(collection(db, "user"), orderBy("username"), limit(10));
+                const playersSnap = await getDocs(q);
+
                 const playersList = playersSnap.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
@@ -265,6 +271,11 @@ export default function Space({ user }: { user: any }) {
             toast.error(errorCode);
         }
     }
+
+    useEffect(() => {
+        console.log(user.uid);
+        console.log(playerData)
+    }, [])
 
     return (
         <>

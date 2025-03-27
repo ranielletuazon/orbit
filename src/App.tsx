@@ -5,7 +5,7 @@ import { auth, db } from './components/firebase/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { User } from "firebase/auth"; // Import Firebase User type
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { getDatabase, ref, set, onDisconnect, serverTimestamp, update } from 'firebase/database';
+import { getDatabase, ref, set, onDisconnect, serverTimestamp, update, get } from 'firebase/database';
 
 import Login from './pages/Login';
 import Home from './pages/Home';
@@ -17,6 +17,8 @@ import Community from './pages/Community';
 import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import Rocket from './pages/Rocket';
+import NotFound from './NotFound';
+import Room from './pages/Room';
 
 import './App.css';
 
@@ -91,6 +93,24 @@ function App() {
       }
     }
   }, [user, currentUser]);
+
+  // Reduce unnecessary writes by checking if the status has changed before updating.
+  const updateUserStatus = async () => {
+    if (!user) return;
+    const db = getDatabase();
+    const rdbUserRef = ref(db, `users/${user.uid}`);
+
+    // Avoid unnecessary writes
+    get(rdbUserRef).then((snapshot) => {
+        if (snapshot.exists() && snapshot.val().status === "online") return;
+
+        update(rdbUserRef, { status: "online" });
+        onDisconnect(rdbUserRef).update({ status: "offline" });
+    });
+  };
+  useEffect(() => {
+      updateUserStatus();
+  }, [user]);
   
   return (
     <>
@@ -106,6 +126,9 @@ function App() {
           <Route path='/community' element={<ProtectedRoute><Community user={user} /></ProtectedRoute>} />
           <Route path='/messages' element={<ProtectedRoute><Messages user={user} /></ProtectedRoute>} />
           <Route path='/rocket' element={<ProtectedRoute><Rocket user={user}/></ProtectedRoute>} />
+          <Route path='/rocket/:roomID' element={<ProtectedRoute><Room user={user}/></ProtectedRoute>} />
+          {/* Catch all component */}
+          <Route path='*' element={<NotFound user={user} />} />
         </Routes>
       </BrowserRouter>
       <Toaster

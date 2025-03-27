@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import React, { useState, useEffect, CSSProperties } from "react";
 import { auth, db, realtimeDb } from '../components/firebase/firebase';
 import { getDoc, doc, collection, getDocs, setDoc, updateDoc, arrayRemove, arrayUnion, onSnapshot } from 'firebase/firestore';
-import { ref, onValue, off, get } from 'firebase/database';
+import { ref, onValue, off, get, onChildChanged } from 'firebase/database';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Loader from '../components/loader'
@@ -19,6 +19,7 @@ export default function Community({user}: {user: any}) {
     const [totalLoad, setTotalLoad] = useState(true);
     const [friendsStatus, setFriendsStatus] = useState<any | null>(null);
     const [friendsData, setFriendsData] = useState<{ [key: string]: any }[]>([]);
+    const [currentTarget, setCurrentTarget] = useState<string>("friends");
 
     useEffect(() => {
         // Fetching the user data to store this in our state
@@ -73,6 +74,8 @@ export default function Community({user}: {user: any}) {
                     )
                 );
             });
+
+            return () => off(statusRef); // Fix: Properly remove the listener
         });
 
         // Cleanup listeners when component unmounts
@@ -263,75 +266,157 @@ export default function Community({user}: {user: any}) {
                         {!totalLoad ? (
                             <>
                                 <div className={styles.content}>
-                                    <div className={styles.friendsHeader}>Friend/s</div>
-                                    <div className={styles.friendCardbox}>
-                                        {friendsData?.length > 0 ? (
-                                            friendsData.map((user, index) => (
-                                                <div className={styles.cardUserDisplay} key={index}>
-                                                    <div className={styles.profileSection}>
-                                                        <img src={user.profileImage} className={styles.profileDisplay} />
-                                                        <div className={styles.profileName}>{user.username}</div>
-                                                        <div className={`${styles.status} ${user.status === "online" ? styles.online : styles.offline}`}>
-                                                            {user.status}
-                                                        </div>
-                                                    </div>
-                                                    <div className={styles.buttons}>
-                                                        <button className={styles.removeButton} onClick={() => handleViewProfile(user.uid)}>View Profile</button>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className={styles.friendContent}>No Friends Yet</div>
-                                        )}
+                                    <div className={styles.targetButtons}>
+                                        <button className={currentTarget === "friends" ? styles.activeTarget : styles.targetButton} onClick={() => setCurrentTarget("friends")}>Friends</button>
+                                        <button className={currentTarget === "friendRequests" ? styles.activeTarget : styles.targetButton} onClick={() => setCurrentTarget("friendRequests")}>Friend Requests <div className={styles.notif}></div></button>
+                                        <button className={currentTarget === "" ? styles.activeTarget : styles.targetButton} onClick={() => setCurrentTarget("")}>Pending Requests</button>
                                     </div>
-                                    <div className={styles.requestsHeader}>Friend Request/s</div>
-                                    <div className={styles.requestCardbox}>
-                                        {friendRequestsRef && friendRequestsRef.length > 0 ? (
+                                    <div className={styles.displayContainer}>
+                                        {currentTarget === "friends" ? (
                                             <>
-                                                {/* Design Sample */}
-                                                { friendRequestsRef && friendRequestsRef.slice().reverse().map((user: any, index: number) => (
-                                                    <div className={styles.cardUserDisplay} key={index}>
-                                                        <div className={styles.profileSection}>
-                                                            <img src={user.profileImage} className={styles.profileDisplay}></img>
-                                                            <div className={styles.profileName}>{user.username}</div>
+                                                {friendsData?.length > 0 ? (
+                                                    friendsData.map((user, index) => (
+                                                        <div className={styles.cardUserDisplay} key={index}>
+                                                            <div className={styles.profileSection}>
+                                                                <div
+                                                                    className={styles.profileDisplay}
+                                                                    style={{ backgroundImage: `url(${user.profileImage})` }}
+                                                                >
+                                                                </div>
+                                                                <div className={styles.profileInfo}>
+                                                                    <div className={styles.profileName}>
+                                                                        {user.username}
+                                                                    </div>
+                                                                    <div
+                                                                        className={`${styles.status} ${
+                                                                            user.status === "online"
+                                                                                ? styles.online
+                                                                                : styles.offline
+                                                                        }`}
+                                                                    >
+                                                                        {user.status}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className={styles.buttons}>
+                                                                <button
+                                                                    className={styles.removeButton}
+                                                                    onClick={() => handleViewProfile(user.uid)}
+                                                                >
+                                                                    View Profile
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <div className={styles.buttons}>
-                                                            <button className={styles.removeButton}>View Profile</button>
-                                                            <button className={styles.acceptButton} onClick={() => handleAcceptRequest(user.id)}>Accept Friend Request</button>
-                                                            <button className={styles.removeButton} onClick={() => handleRemoveRequest(user.id)}>Remove Friend Request</button>
-                                                        </div>
-                                                    </div> 
-                                                ))}
+                                                    ))
+                                                ) : (
+                                                    <div className={styles.friendContent}>No Friends Yet</div>
+                                                )}
                                             </>
-
+                                        ) : currentTarget === "friendRequests" ? (
+                                            <>
+                                                {friendRequestsRef?.length > 0 ? (
+                                                    friendRequestsRef.map((user: any, index: number) => (
+                                                        <div className={styles.cardUserDisplay} key={index}>
+                                                            <div className={styles.profileSection}>
+                                                                <div
+                                                                    className={styles.profileDisplay}
+                                                                    style={{ backgroundImage: `url(${user.profileImage})` }}
+                                                                >
+                                                                </div>
+                                                                <div className={styles.profileInfo}>
+                                                                    <div className={styles.profileName}>
+                                                                        {user.username}
+                                                                    </div>
+                                                                    <div
+                                                                        className={`${styles.status} ${
+                                                                            user.status === "online"
+                                                                                ? styles.online
+                                                                                : styles.offline
+                                                                        }`}
+                                                                    >
+                                                                        {user.status}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className={styles.buttons}>
+                                                                <button
+                                                                    className={styles.removeButton}
+                                                                    onClick={() => handleViewProfile(user.uid)}
+                                                                >
+                                                                    View Profile
+                                                                </button>
+                                                                <button
+                                                                    className={styles.acceptButton}
+                                                                    onClick={() =>
+                                                                        handleAcceptRequest(user.id)
+                                                                    }
+                                                                >
+                                                                    Accept Friend Request
+                                                                </button>
+                                                                <button
+                                                                    className={styles.removeButton}
+                                                                    onClick={() =>
+                                                                        handleRemoveRequest(user.id)
+                                                                    }
+                                                                >
+                                                                    Remove Friend Request
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className={styles.friendContent}>No Requests Yet</div>
+                                                )}
+                                            </>
                                         ) : (
                                             <>
-                                                <div className={styles.requestContent}>No Sent Requests Yet</div>
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className={styles.pendingFriends}>Pending Request/s</div>
-                                    <div className={styles.pendingCardbox}>
-                                        {pendingRef && pendingRef.length > 0 ? (
-                                            <>
-                                                {pendingRef && pendingRef.slice().reverse().map((user: any, index: number) => (
-                                                    <div className={styles.cardUserDisplay} key={index}>
-                                                        <div className={styles.profileSection}>
-                                                            <img src={user.profileImage} className={styles.profileDisplay}></img>
-                                                            <div className={styles.profileName}>{user.username}</div>
+                                                {pendingRef?.length > 0 ? (
+                                                    pendingRef.map((user: any, index: number) => (
+                                                        <div className={styles.cardUserDisplay} key={index}>
+                                                            <div className={styles.profileSection}>
+                                                                <div
+                                                                    className={styles.profileDisplay}
+                                                                    style={{ backgroundImage: `url(${user.profileImage})` }}
+                                                                >
+                                                                </div>
+                                                                <div className={styles.profileInfo}>
+                                                                    <div className={styles.profileName}>
+                                                                        {user.username}
+                                                                    </div>
+                                                                    <div
+                                                                        className={`${styles.status} ${
+                                                                            user.status === "online"
+                                                                                ? styles.online
+                                                                                : styles.offline
+                                                                        }`}
+                                                                    >
+                                                                        {user.status}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className={styles.buttons}>
+                                                                <button
+                                                                    className={styles.removeButton}
+                                                                    onClick={() => handleViewProfile(user.uid)}
+                                                                >
+                                                                    View Profile
+                                                                </button>
+                                                                <button
+                                                                    className={styles.removeButton}
+                                                                    onClick={() =>
+                                                                        handleCancelRequest(user.id)
+                                                                    }
+                                                                >
+                                                                    Cancel Friend Request
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <div className={styles.buttons}>
-                                                            <button className={styles.removeButton}>View Profile</button>
-                                                            <button className={styles.removeButton} onClick={() => handleCancelRequest(user.id)}>Cancel Friend Request</button>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    ))
+                                                ) : (
+                                                    <div className={styles.friendContent}>Discover People at Space!</div>
+                                                )}
                                             </>
-                                        ) : (
-                                            <>
-                                                <div className={styles.pendingContent}>No Pending Requests Yet</div>
-                                            </>
-                                        )}
+                                        )}      
                                     </div>
                                 </div>
                             </>

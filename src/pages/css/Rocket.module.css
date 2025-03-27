@@ -45,8 +45,9 @@
     background-repeat: no-repeat;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     display: flex;
-    padding: 1rem;
+    padding: 1rem 1rem 3rem 1rem;
     opacity: 0;
+    background-color: hsl(196, 100%, 5%);
     animation: fade-in 1s ease-in forwards;
 }
 
@@ -156,9 +157,48 @@
         padding: 1rem;
         border-radius: 10px;
         border: none;
-        background-color: #2cc6ff;
+        background-color: hsl(196, 100%, 59%);
         color: white;
     }
+
+    button:disabled{
+        cursor: not-allowed;
+        background-color: hsl(196, 100%, 19%);
+    }
+}
+
+.loadingSection{
+    display: flex;
+    width: 100%;
+    padding: 0 2rem;
+    height: 20em; 
+    justify-content: center; 
+    align-items: center; 
+    margin-top: auto; 
+
+
+    .loadingCard{
+        width: 100%;
+        background-color: hsl(0, 0%, 15%);
+        height: 100%;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+
+        p{
+            font-size: 1rem;
+            color: hsl(0, 0%, 75%);
+        }
+    }
+}
+
+.cancelButton{
+    padding: .2rem .5rem;
+    border-radius: 5px;
+    border: none;
 }
 
 @media screen and (min-height: 1080px) {

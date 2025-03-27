@@ -308,8 +308,6 @@ export default function AccountSetup({ user, currentUser }: AccountSetupProps) {
 
     const handleFinish = async () => {
         const userDocRef = doc(db, 'user', user.uid);
-        const realtimeDb = getDatabase();
-        const rdbUserRef = ref(realtimeDb, `users/${user.uid}`);
         setFinish(true);
     
         try {
@@ -324,9 +322,6 @@ export default function AccountSetup({ user, currentUser }: AccountSetupProps) {
                         userGenres: selectedGenres,
                         profileImage: imageUpload,
                     }, { merge: true }),
-                    update(rdbUserRef, {
-                        profileImage: imageUpload,
-                    })
                 ]),
                 {
                     loading: 'Saving data...',
@@ -338,7 +333,6 @@ export default function AccountSetup({ user, currentUser }: AccountSetupProps) {
             // Navigate after saving is successful
             await Promise.all([
                 setDoc(userDocRef, { /* Firestore data */ }, { merge: true }),
-                update(rdbUserRef, { /* Realtime DB data */ })
             ]);
     
             setTimeout(() => {

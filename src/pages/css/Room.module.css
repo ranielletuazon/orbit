@@ -1,0 +1,223 @@
+/* Keep these unchanged as requested */
+.container{
+    background-color: hsl(0, 0%, 15%);
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.page{
+    max-width: 2000px;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.pageContainer {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    position: relative;
+}
+
+/* Modified/added styles below */
+.mainCall{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.cameraSection{
+    width: 100%;
+    height: 70%;
+    display: flex;
+    flex-direction: row;
+    padding: 1rem;
+    gap: 1.5rem;
+}
+
+.boxCam{
+    display: flex;
+    position: relative;
+    width: 50%;
+    height: 100%;
+    background-color: hsl(0, 0%, 8%);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+video{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.participantName {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10;
+}
+
+.waitingText {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+    font-size: 18px;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 12px 20px;
+    border-radius: 8px;
+    width: 80%;
+}
+
+.menuSection{
+    flex: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.callControls {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 16px 24px;
+    border-radius: 40px;
+}
+
+.controlButton {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.controlButton:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.controlButtonActive {
+    background-color: rgba(255, 0, 0, 0.6);
+}
+
+.controlButtonActive:hover {
+    background-color: rgba(255, 0, 0, 0.8);
+}
+
+.endCallButton {
+    background-color: rgba(255, 0, 0, 0.8);
+}
+
+.endCallButton:hover {
+    background-color: rgb(255, 0, 0);
+}
+
+.errorContainer {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: hsl(0, 0%, 15%);
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.errorContainer h2 {
+    margin-bottom: 16px;
+    font-size: 24px;
+}
+
+.errorContainer p {
+    margin-bottom: 24px;
+    max-width: 500px;
+}
+
+.button {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.button:hover {
+    background-color: #2980b9;
+}
+
+@media screen and (min-height: 1080px) {
+    .pageContainer {
+        height: 1080px;
+        width: 100%;
+        display: flex;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .cameraSection {
+        flex-direction: column;
+        height: 80%;
+    }
+    
+    .boxCam {
+        width: 100%;
+        height: 50%;
+    }
+    
+    .callControls {
+        padding: 12px 16px;
+    }
+    
+    .controlButton {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .pageContainer{
+        flex-direction: column-reverse;
+    }
+    
+    .controlButton {
+        width: 44px;
+        height: 44px;
+        font-size: 14px;
+    }
+}

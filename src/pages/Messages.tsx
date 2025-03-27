@@ -426,12 +426,13 @@ export default function Messages({user}: {user: any}) {
                                             <button className={styles.userCard} onClick={() => getCurrentChat(user.chatID, user.friendID)} key={key}> {/* setUserDisplay(true); setCurrentChat(user); */}
                                                 <div className={styles.upSection}>
                                                     <div className={styles.userIcon}>
-                                                        {/* <div className={styles.userProfileImage} src={user.profileImage?}></div> */}
-                                                        <img src={user.profileImage} className={styles.userProfileImage} alt={`${user.username} profile image`} />
+                                                        <div className={styles.userProfileImage} style={{ backgroundImage: `url(${user.profileImage})` }}>
+                                                            <div className={user.status === "online" ? styles.iconOnline : styles.iconOffline}></div>
+                                                        </div>
+                                                        {/* <img src={user.profileImage} className={styles.userProfileImage} alt={`${user.username} profile image`} /> */}
                                                     </div>
                                                     <div className={styles.userDiv}>
                                                         <div className={styles.userName}>{user.username}</div>
-                                                        <div className={styles.userStatus} style={{ color: user.status === "offline" ? "hsl(0, 0%, 30%)" : "hsl(0, 0%, 100%)" }}>{user.status}</div>
                                                     </div>
                                                     <div className={styles.lastMessageTime}>{user.createdAt ? getRelativeTime(user.createdAt) : ""}</div>
                                                 </div>
@@ -476,7 +477,7 @@ export default function Messages({user}: {user: any}) {
                                             )}
                                             {friendId && 
                                                 <>
-                                                    <img src={friendId.profileImage} alt={`${friendId.username} profile image`} className={styles.userProfileImage}/>
+                                                    <div style={{ backgroundImage: `url(${friendId.profileImage})` }} className={styles.userProfileImage}></div>
                                                     <div className={styles.userDiv}>
                                                         <div className={styles.userName}>{friendId.username}</div>
                                                     </div>
