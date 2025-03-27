@@ -8,7 +8,7 @@ import Loader from "../components/loader";
 import { io } from "socket.io-client";
 
 // const socket = io("https://orbit-server.onrender.com:5000");
-const socket = io("https://orbit-server.onrender.com:5000", { 
+const socket = io("https://orbit-server.onrender.com", { 
     secure: true 
 });
 
@@ -61,7 +61,7 @@ export default function Rocket({ user }: { user: any }) {
     
         setTimeout( async () => {
             try {
-                const response = await fetch("https://orbit-server.onrender.com:5000/joinQueue", {
+                const response = await fetch("https://orbit-server.onrender.com/joinQueue", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ userId: user.uid, game: selectedGame }),
