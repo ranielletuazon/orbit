@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { io } from "socket.io-client";
 
 // Initialize socket connection
-const socket = io("https://orbit-server.onrender.com:5000");
+const socket = io("https://orbit-server.onrender.com");
 
 // WebRTC configuration
 const configuration = { 
