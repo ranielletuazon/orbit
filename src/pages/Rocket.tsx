@@ -7,7 +7,10 @@ import { doc, getDoc, updateDoc, collection, getDocs, onSnapshot } from 'firebas
 import Loader from "../components/loader";
 import { io } from "socket.io-client";
 
-const socket = io("https://orbit-server.onrender.com:5000");
+// const socket = io("https://orbit-server.onrender.com:5000");
+const socket = io("https://orbit-server.onrender.com", { 
+    secure: true 
+});
 
 export default function Rocket({ user }: { user: any }) {
 
