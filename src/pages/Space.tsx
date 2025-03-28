@@ -1,7 +1,7 @@
 import React, { useState, useEffect, CSSProperties } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { auth, db, realtimeDb } from "../components/firebase/firebase";
-import { getDoc, doc, collection, getDocs, setDoc, query, orderBy, limit, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "firebase/firestore";
+import { getDoc, doc, collection, getDocs, setDoc, query, orderBy, limit, updateDoc, arrayUnion, arrayRemove, onSnapshot, increment } from "firebase/firestore";
 import { ref, onValue, getDatabase, get } from "firebase/database";
 import Loader from '../components/loader'
 import { toast } from "sonner";
@@ -310,6 +310,16 @@ export default function Space({ user }: { user: any }) {
             } else {
                 setStatusMessage("Waiting for match...");
                 socket.emit("joinQueue", user.uid);
+
+                // Increment game popularity
+                const gameRef = doc(db, "onlineGames", gameId);
+                try {
+                    await updateDoc(gameRef, {
+                        gamePopularity: increment(1),
+                    });
+                } catch (error) {
+                    console.error("Error incrementing game popularity:", error);
+                }
             }
         } catch (error) {
             console.error("Error connecting to server:", error);
@@ -322,7 +332,7 @@ export default function Space({ user }: { user: any }) {
     // Listen for match event
     useEffect(() => {
         if (user) {
-            socket.on("matchFound", ({ roomID, opponent }) => {
+            socket.on("matchFound", async ({ roomID, opponent }) => {
                 toast.success(`Match found! Redirecting...`);
                 setTimeout(() => {
                     navigate(`/rocket/${roomID}`);
@@ -499,11 +509,6 @@ export default function Space({ user }: { user: any }) {
                                                     </div>
                                                     <div className={styles.gameboxplayercount}>
                                                         {game.gamePopularity} players
-                                                    </div>
-                                                    <div 
-                                                        className={styles.view}
-                                                    >
-                                                        <i className="fa-solid fa-eye"></i> Find Player
                                                     </div>
                                                 </div>
                                             ))}

@@ -4,7 +4,7 @@
 
 
 .container{
-    background-color: hsl(0, 0%, 15%);
+    background: linear-gradient(135deg, hsl(0, 0%, 10%) 0%, hsl(196, 100%, 5%) 100%);
     width: 100%;
     height: 100vh;
     display: flex;
@@ -84,15 +84,24 @@
     height: 100%;
     position: relative;
     border-radius: 2rem;
-    background: rgb(38,38,38);
-    background: linear-gradient(60deg, rgb(32, 32, 32) 0%, rgba(128,128,128,1) 100%);
+    background: linear-gradient(135deg, hsl(0, 0%, 5%) 0%, hsl(196, 100%, 3%) 100%);
     padding: 1.5rem;
-    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    transition: transform 0.3s ease-in-out;
+    cursor: pointer;
 
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-}  
+}
+
+.popular:hover {
+    background-color: hsl(0, 0%, 45%);
+    transform: translateY(-5px);
+}
+
+.popular:active{
+    transform: scale(.98);
+}
 
 .popularSection{
     width: 100%;
@@ -173,7 +182,7 @@
     height: 100%;
     font-size: .8rem;
     border-radius: 2rem;
-    background-color: white;
+    background-color: hsl(0, 0%, 50%);
     padding: 0.5rem 1rem;
     display: flex;
     justify-content: center;
@@ -189,18 +198,30 @@
     gap: 2rem;
 }
 
-.gameBox{
+.gameBox {
     padding: 1rem;
     border-radius: 10px;
     width: 50%;
     height: 100%;
-    background-color: hsl(0, 0%, 35%);
+    background: linear-gradient(135deg, hsl(0, 0%, 5%) 0%, hsl(196, 100%, 3%) 100%);
     display: flex;
     justify-content: flex-start;
     gap: 5px;
     position: relative;
     flex-direction: column;
+    cursor: pointer;
     box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.gameBox:hover {
+    background-color: hsl(0, 0%, 45%);
+    transform: translateY(-5px);
+}
+
+.gameBox:active {
+    background-color: hsl(0, 0%, 30%);
+    transform: translateY(0);
 }
 
 .gameboximage{
