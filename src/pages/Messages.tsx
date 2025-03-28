@@ -402,7 +402,6 @@ export default function Messages({user}: {user: any}) {
         if (chatBodyRef.current) {
             chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
         }
-
     }, [currentChat]);
 
     return (
@@ -447,14 +446,24 @@ export default function Messages({user}: {user: any}) {
                                             </button>
                                         ))}
                                     </div>
-                                ) : fetchChatData.length === 0 && !isLoading ? (
-                                    <div className={styles.userSection}>
-                                        <div className={styles.searchBar}>
-                                            <i className="fa-solid fa-magnifying-glass"></i>
-                                            <input className={styles.searchInput} type="search" placeholder="Search..." />
+                                ) : fetchChatData && fetchChatData.length === 0 && !isLoading ? (
+                                    <>
+                                        <div className={styles.userSection}>
+                                            <div className={styles.searchBar}>
+                                                <i className="fa-solid fa-magnifying-glass"></i>
+                                                <input className={styles.searchInput} type="search" placeholder="Search..." />
+                                            </div>
+                                            <div className={styles.noChatContainer}>
+                                                <p className={styles.noChatMessage}>No chats yet. Try adding friends in Space!</p>
+                                                <button 
+                                                    className={styles.findFriendsButton}
+                                                    onClick={() => navigate("/space")}
+                                                >
+                                                    Find Friends
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className={styles.noChatMessage}>Find friends to chat with!</div>
-                                    </div>
+                                    </>
                                 ) : (
                                     <div className={styles.userSection} style={{ justifyContent: "center", width:"100%", alignItems:"center"}}>
                                         <Loader/>

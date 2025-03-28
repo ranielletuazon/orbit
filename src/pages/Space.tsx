@@ -8,6 +8,12 @@ import { toast } from "sonner";
 import styles from './css/Space.module.css';
 import { set } from "firebase/database";
 import Header from '../components/Header';
+import { io } from "socket.io-client";
+
+// Initialize socket connection
+const socket = io("https://orbit-server.onrender.com", { 
+    secure: true 
+});
 
 export default function Space({ user }: { user: any }) {
 
@@ -28,6 +34,9 @@ export default function Space({ user }: { user: any }) {
     const [sidebar, setSidebar] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [userStatus, setUserStatus] = useState<boolean>(false);
+    const [loading, setLoading] = useState(false);
+    const [onQueue, setOnQueue] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
 
     const navigate = useNavigate();
 
@@ -272,10 +281,59 @@ export default function Space({ user }: { user: any }) {
         }
     }
 
+    // New function to handle immediate game queuing
+    const handleImmediateQueue = async (gameId: string) => {
+        setLoading(true);
+        setOnQueue(true);
+        setStatusMessage("Connecting to the server...");
+
+        if (!user || !gameId) {
+            toast.error("Unable to join queue. Please try again.");
+            setLoading(false);
+            setOnQueue(false);
+            return;
+        }
+
+        try {
+            const response = await fetch("https://orbit-server.onrender.com/joinQueue", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.uid, game: gameId }),
+            });
+    
+            const data = await response.json();
+    
+            if (response.status === 400) {
+                toast.error(data.error);
+                setLoading(false);
+                setOnQueue(false);
+            } else {
+                setStatusMessage("Waiting for match...");
+                socket.emit("joinQueue", user.uid);
+            }
+        } catch (error) {
+            console.error("Error connecting to server:", error);
+            toast.error("Connection failed. Try again.");
+            setLoading(false);
+            setOnQueue(false);
+        }
+    };
+
+    // Listen for match event
     useEffect(() => {
-        console.log(user.uid);
-        console.log(playerData)
-    }, [])
+        if (user) {
+            socket.on("matchFound", ({ roomID, opponent }) => {
+                toast.success(`Match found! Redirecting...`);
+                setTimeout(() => {
+                    navigate(`/rocket/${roomID}`);
+                }, 2000);
+            });
+
+            return () => {
+                socket.off("matchFound");
+            };
+        }
+    }, [user, navigate]);
 
     return (
         <>
@@ -292,230 +350,322 @@ export default function Space({ user }: { user: any }) {
                                     </span>
                                 </div>
                                 <div className={styles.sideButtons}>
+                                    <button className="fa-solid fa-bell"></button>
                                     <button
-                                        className="fa-solid fa-bell"
-                                    ></button>
-                                    <button
-                                        onClick={() => navigate('/messages')}
+                                        onClick={() => navigate("/messages")}
                                         className="fa-solid fa-comment-dots"
                                     ></button>
                                     <button
-                                        onClick={() => navigate('/community')}
+                                        onClick={() => navigate("/community")}
                                         className="fa-solid fa-user-group"
-                                        style={{position: "relative"}}
+                                        style={{ position: "relative" }}
                                     >
-                                        <div className={styles.newNotif} style={{ display: currentUser?.friendRequests && currentUser.friendRequests.length > 0 ? "block" : "none" }}></div>
+                                        <div
+                                            className={styles.newNotif}
+                                            style={{
+                                                display:
+                                                    currentUser?.friendRequests &&
+                                                    currentUser.friendRequests
+                                                        .length > 0
+                                                        ? "block"
+                                                        : "none",
+                                            }}
+                                        ></div>
                                     </button>
                                 </div>
                             </div>
                             {isLoading ? (
                                 <>
                                     <div className={styles.gameSection}>
-                                <div className={styles.popular}>
-                                    <img
-                                        src={topGames[0]?.gameTopImage}
-                                        alt="Top 1 Game"
-                                        className={styles.popularImage}
-                                    />
-                                    <div className={styles.popularSection}>
-                                        <div className={styles.popularTag}>
-                                            <i className="fa-solid fa-fire"></i>
-                                            Popular
-                                        </div>
-                                    </div>
-                                    <div className={styles.popularTitle}>
-                                        <div className={styles.gameTitle}>
-                                            {topGames[0]?.title}
-                                        </div>
-                                    </div>
-                                    <div className={styles.descriptionSection}>
-                                        {" "}
-                                        {/* ADD DESCRIPTION */}
-                                        <div className={styles.description}>
-                                            Valorant is an online multiplayer
-                                            computer game, produced by Riot
-                                            Games. It is a first-person shooter
-                                            game, consisting of two teams of
-                                            five, where one team attacks and the
-                                            other defends. Players control
-                                            characters known as 'agents', who
-                                            all have different abilities to use
-                                            during gameplay.
-                                        </div>
-                                    </div>
-                                    <div className={styles.playersSection}>
-                                        <div className={styles.playerCircles}>
-                                            <div
-                                                className={styles.player}
-                                            ></div>
-                                            <div
-                                                className={styles.player}
-                                                style={{ marginLeft: "-2rem" }}
-                                            ></div>
-                                            <div
-                                                className={styles.player}
-                                                style={{ marginLeft: "-2rem" }}
-                                            ></div>
-                                        </div>
-                                        <div className={styles.playersInfo}>
-                                            {" "}
-                                            +85 more looking for Valorant
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className={styles.box}>
-                                    <div className={styles.gameBox}>
-                                        <img
-                                            src={topGames[1]?.gameImage}
-                                            alt="Top 2 Game"
-                                            className={styles.gameboximage}
-                                        />
-                                        <div className={styles.gameboxtitle}>
-                                            {topGames[1]?.title}
-                                        </div>
                                         <div
-                                            className={
-                                                styles.gameboxplayercount
+                                            className={styles.popular}
+                                            onClick={() =>
+                                                handleImmediateQueue(
+                                                    topGames[0].id
+                                                )
                                             }
                                         >
-                                            20 players
-                                        </div>
-                                        <div className={styles.view}>
-                                            <i className="fa-solid fa-eye"></i>{" "}
-                                            View
-                                        </div>
-                                    </div>
-                                    <div className={styles.gameBox}>
-                                        <img
-                                            src={topGames[2]?.gameImage}
-                                            alt="Top 3 Game"
-                                            className={styles.gameboximage}
-                                        />
-                                        <div className={styles.gameboxtitle}>
-                                            {topGames[2]?.title}
-                                        </div>
-                                        <div
-                                            className={
-                                                styles.gameboxplayercount
-                                            }
-                                        >
-                                            15 players
-                                        </div>
-                                        <div className={styles.view}>
-                                            <i className="fa-solid fa-eye"></i>{" "}
-                                            View
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className={styles.userHeader}>
-                                Players for You Today
-                            </div>
-                            <div className={styles.playerSection}>
-                                {" "}
-                                {/* Maximum of 5 */}
-                                {playerData &&
-                                    playerData.map((item, index) => (
-                                        <div
-                                            key={index}
-                                            className={styles.playerDisplay}
-                                            style={{
-                                                backgroundImage: `url(${item.profileImage})`,
-                                            }}
-                                        >
-                                            <div
-                                                className={styles.statusDisplay}
-                                                style={{
-                                                    display:
-                                                        item.status === "online"
-                                                            ? "block"
-                                                            : "none",
-                                                }}
-                                            ></div>
+                                            <img
+                                                src={topGames[0]?.gameTopImage}
+                                                alt="Top 1 Game"
+                                                className={styles.popularImage}
+                                            />
                                             <div
                                                 className={
-                                                    styles.playerDescription
+                                                    styles.popularSection
                                                 }
                                             >
                                                 <div
                                                     className={
-                                                        styles.playerUsername
+                                                        styles.popularTag
                                                     }
                                                 >
-                                                    <b>
-                                                        {item.username},{" "}
-                                                        {item.birthdate &&
-                                                            Math.floor(
-                                                                (Date.now() -
-                                                                    new Date(
-                                                                        item.birthdate
-                                                                    ).getTime()) /
-                                                                    (1000 *
-                                                                        60 *
-                                                                        60 *
-                                                                        24 *
-                                                                        365.25)
-                                                            )}{" "}
-                                                        {item.gender &&
-                                                        item.gender.toLowerCase() ===
-                                                            "male" ? (
-                                                            <i
-                                                                className="fa-solid fa-mars"
-                                                                style={{
-                                                                    color: "#2cc6ff",
-                                                                    marginLeft:
-                                                                        "0.5rem",
-                                                                }}
-                                                            ></i>
-                                                        ) : (
-                                                            <i
-                                                                className="fa-solid fa-venus"
-                                                                style={{
-                                                                    color: "hsl(0, 100%, 70%)",
-                                                                    marginLeft:
-                                                                        "0.5rem",
-                                                                }}
-                                                            ></i>
-                                                        )}
-                                                    </b>
+                                                    <i className="fa-solid fa-fire"></i>
+                                                    Popular
                                                 </div>
-                                                    <button
+                                            </div>
+                                            <div
+                                                className={styles.popularTitle}
+                                            >
+                                                <div
+                                                    className={styles.gameTitle}
+                                                >
+                                                    {topGames[0]?.title}
+                                                </div>
+                                            </div>
+                                            <div
+                                                className={
+                                                    styles.descriptionSection
+                                                }
+                                            >
+                                                {" "}
+                                                {/* ADD DESCRIPTION */}
+                                                <div
                                                     className={
-                                                        currentUser?.friendRequests?.includes(item.id)
-                                                            ? styles.acceptRequest
-                                                            : currentUser?.pendingRequests?.includes(item.id)
-                                                            ? styles.pendingRequest
-                                                            : currentUser?.friends?.includes(item.id)
-                                                            ? styles.playerFriended
-                                                            : styles.playerAdd
-                                                    }
-                                                    onClick={
-                                                        currentUser?.friendRequests?.includes(item.id)
-                                                            ? () => handleAcceptRequest(item)
-                                                            : currentUser?.friends?.includes(item.id)
-                                                            ? () => toast("friend")
-                                                            : () => handleFriendRequest(item)
+                                                        styles.description
                                                     }
                                                 >
-                                                    {currentUser?.friendRequests?.includes(item.id) ? (
-                                                        <i className="fa-solid fa-user-check"></i>
-                                                    ) : currentUser?.pendingRequests?.includes(item.id) ? (
-                                                        <i className="fa-solid fa-hourglass-half"></i> // Pending request icon
-                                                    ) : currentUser?.friends?.includes(item.id) ? (
-                                                        <i className="fa-solid fa-user"></i>
-                                                    ) : (
-                                                        <i className="fa-solid fa-user-plus"></i>
-                                                    )}
-                                                </button>
+                                                    Valorant is an online
+                                                    multiplayer computer game,
+                                                    produced by Riot Games. It
+                                                    is a first-person shooter
+                                                    game, consisting of two
+                                                    teams of five, where one
+                                                    team attacks and the other
+                                                    defends. Players control
+                                                    characters known as
+                                                    'agents', who all have
+                                                    different abilities to use
+                                                    during gameplay.
+                                                </div>
+                                            </div>
+                                            <div
+                                                className={
+                                                    styles.playersSection
+                                                }
+                                            >
+                                                <div
+                                                    className={
+                                                        styles.playerCircles
+                                                    }
+                                                >
+                                                    <div
+                                                        className={
+                                                            styles.player
+                                                        }
+                                                    ></div>
+                                                    <div
+                                                        className={
+                                                            styles.player
+                                                        }
+                                                        style={{
+                                                            marginLeft: "-2rem",
+                                                        }}
+                                                    ></div>
+                                                    <div
+                                                        className={
+                                                            styles.player
+                                                        }
+                                                        style={{
+                                                            marginLeft: "-2rem",
+                                                        }}
+                                                    ></div>
+                                                </div>
+                                                <div
+                                                    className={
+                                                        styles.playersInfo
+                                                    }
+                                                >
+                                                    {topGames[0]
+                                                        .gamePopularity &&
+                                                        Math.round(
+                                                            topGames[0]
+                                                                .gamePopularity
+                                                        )}{" "}
+                                                    players looked for this game
+                                                </div>
                                             </div>
                                         </div>
-                                    ))}
-                            </div>
+                                        <div className={styles.box}>
+                                            {topGames.slice(1).map((game, index) => (
+                                                <div key={game.id} className={styles.gameBox} onClick={() => handleImmediateQueue(game.id)}>
+                                                    <img
+                                                        src={game.gameImage}
+                                                        alt={`Top ${index + 2} Game`}
+                                                        className={styles.gameboximage}
+                                                    />
+                                                    <div className={styles.gameboxtitle}>
+                                                        {game.title}
+                                                    </div>
+                                                    <div className={styles.gameboxplayercount}>
+                                                        {game.gamePopularity} players
+                                                    </div>
+                                                    <div 
+                                                        className={styles.view}
+                                                    >
+                                                        <i className="fa-solid fa-eye"></i> Find Player
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* Loading Overlay */}
+                                        {onQueue && (
+                                            <div className={styles.loadingOverlay}>
+                                                <div className={styles.loadingCard}>
+                                                    {statusMessage && <p>{statusMessage}</p>}
+                                                    <Loader />
+                                                    <button 
+                                                        className={styles.cancelButton} 
+                                                        onClick={() => {
+                                                            socket.emit("leaveQueue", user.uid);
+                                                            setOnQueue(false);
+                                                            setLoading(false);
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={styles.userHeader}>
+                                        Players for You Today
+                                    </div>
+                                    <div className={styles.playerSection}>
+                                        {" "}
+                                        {/* Maximum of 5 */}
+                                        {playerData &&
+                                            playerData.map((item, index) => (
+                                                <div
+                                                    key={index}
+                                                    className={
+                                                        styles.playerDisplay
+                                                    }
+                                                    style={{
+                                                        backgroundImage: `url(${item.profileImage})`,
+                                                    }}
+                                                >
+                                                    <div
+                                                        className={
+                                                            styles.statusDisplay
+                                                        }
+                                                        style={{
+                                                            display:
+                                                                item.status ===
+                                                                "online"
+                                                                    ? "block"
+                                                                    : "none",
+                                                        }}
+                                                    ></div>
+                                                    <div
+                                                        className={
+                                                            styles.playerDescription
+                                                        }
+                                                    >
+                                                        <div
+                                                            className={
+                                                                styles.playerUsername
+                                                            }
+                                                        >
+                                                            <b>
+                                                                {item.username},{" "}
+                                                                {item.birthdate &&
+                                                                    Math.floor(
+                                                                        (Date.now() -
+                                                                            new Date(
+                                                                                item.birthdate
+                                                                            ).getTime()) /
+                                                                            (1000 *
+                                                                                60 *
+                                                                                60 *
+                                                                                24 *
+                                                                                365.25)
+                                                                    )}{" "}
+                                                                {item.gender &&
+                                                                item.gender.toLowerCase() ===
+                                                                    "male" ? (
+                                                                    <i
+                                                                        className="fa-solid fa-mars"
+                                                                        style={{
+                                                                            color: "#2cc6ff",
+                                                                            marginLeft:
+                                                                                "0.5rem",
+                                                                        }}
+                                                                    ></i>
+                                                                ) : (
+                                                                    <i
+                                                                        className="fa-solid fa-venus"
+                                                                        style={{
+                                                                            color: "hsl(0, 100%, 70%)",
+                                                                            marginLeft:
+                                                                                "0.5rem",
+                                                                        }}
+                                                                    ></i>
+                                                                )}
+                                                            </b>
+                                                        </div>
+                                                        <button
+                                                            className={
+                                                                currentUser?.friendRequests?.includes(
+                                                                    item.id
+                                                                )
+                                                                    ? styles.acceptRequest
+                                                                    : currentUser?.pendingRequests?.includes(
+                                                                          item.id
+                                                                      )
+                                                                    ? styles.pendingRequest
+                                                                    : currentUser?.friends?.includes(
+                                                                          item.id
+                                                                      )
+                                                                    ? styles.playerFriended
+                                                                    : styles.playerAdd
+                                                            }
+                                                            onClick={
+                                                                currentUser?.friendRequests?.includes(
+                                                                    item.id
+                                                                )
+                                                                    ? () =>
+                                                                          handleAcceptRequest(
+                                                                              item
+                                                                          )
+                                                                    : currentUser?.friends?.includes(
+                                                                          item.id
+                                                                      )
+                                                                    ? () =>
+                                                                          toast(
+                                                                              "friend"
+                                                                          )
+                                                                    : () =>
+                                                                          handleFriendRequest(
+                                                                              item
+                                                                          )
+                                                            }
+                                                        >
+                                                            {currentUser?.friendRequests?.includes(
+                                                                item.id
+                                                            ) ? (
+                                                                <i className="fa-solid fa-user-check"></i>
+                                                            ) : currentUser?.pendingRequests?.includes(
+                                                                  item.id
+                                                              ) ? (
+                                                                <i className="fa-solid fa-hourglass-half"></i> // Pending request icon
+                                                            ) : currentUser?.friends?.includes(
+                                                                  item.id
+                                                              ) ? (
+                                                                <i className="fa-solid fa-user"></i>
+                                                            ) : (
+                                                                <i className="fa-solid fa-user-plus"></i>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
                                 </>
                             ) : (
                                 <>
                                     <div className={styles.container}>
-                                        <Loader/>
+                                        <Loader />
                                     </div>
                                 </>
                             )}

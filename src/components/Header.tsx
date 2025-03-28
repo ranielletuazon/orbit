@@ -45,6 +45,34 @@ export default function Header({ user }: { user: any }){
         profileImage();
     },[profileImageIcon])
 
+    // Handle logout button
+        const handleLogout = async () => {
+            return toast.promise(
+                (async () => {
+                    try {
+                        const db = getDatabase();
+                        const rdbUserRef = ref(db, `users/${user.uid}`);
+                        
+                        await update(rdbUserRef, {
+                            status: "offline"
+                        })
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                        await auth.signOut();
+                        return "Logged out successfully!";
+                    } catch (error) {
+                        console.log(error);
+                        throw error;
+                    }
+                })(),
+                {
+                    loading: "Logging out...",
+                    success: "Logged out!",
+                    error: "Failed to log out. Please try again."
+                }
+            );
+        };
+
     return(
         <>
             <div className={styles.header}>
@@ -56,7 +84,7 @@ export default function Header({ user }: { user: any }){
                         <button onClick={() => navigate('/rocket')} className={styles.menuButton}><i className="fa-solid fa-rocket" ></i></button>
                     </div>
                     <div className={styles.menus}>
-                        <button onClick={() => navigate('/settings')} className={styles.menuButton}><i className="fa-solid fa-gear"></i></button>
+                        <button onClick={handleLogout} className={styles.menuButton} style={{ color: 'red', textShadow: '0 0 5px red' }}><i className="fa-solid fa-power-off"></i></button>
                         { profileImageIcon ? (
                             <>
                                 <button onClick={() => navigate('/settings/profile')} className={styles.profileButton} >

@@ -216,7 +216,6 @@ export default function Community({user}: {user: any}) {
                 // Remove the UID from the friendRequests array in Firestore
                 await updateDoc(userDocRef, {
                     friendRequests: arrayRemove(uid),
-                    friends: arrayUnion(uid)
                 });
 
                 await updateDoc(requestDoc, {
@@ -268,7 +267,7 @@ export default function Community({user}: {user: any}) {
                                 <div className={styles.content}>
                                     <div className={styles.targetButtons}>
                                         <button className={currentTarget === "friends" ? styles.activeTarget : styles.targetButton} onClick={() => setCurrentTarget("friends")}>Friends</button>
-                                        <button className={currentTarget === "friendRequests" ? styles.activeTarget : styles.targetButton} onClick={() => setCurrentTarget("friendRequests")}>Friend Requests <div className={styles.notif}></div></button>
+                                        <button className={currentTarget === "friendRequests" ? styles.activeTarget : styles.targetButton} onClick={() => setCurrentTarget("friendRequests")}>Friend Requests {friendRequestsRef && friendRequestsRef.length > 0 ? <div className={styles.notif}></div> : ""}</button>
                                         <button className={currentTarget === "" ? styles.activeTarget : styles.targetButton} onClick={() => setCurrentTarget("")}>Pending Requests</button>
                                     </div>
                                     <div className={styles.displayContainer}>
@@ -341,7 +340,7 @@ export default function Community({user}: {user: any}) {
                                                             <div className={styles.buttons}>
                                                                 <button
                                                                     className={styles.removeButton}
-                                                                    onClick={() => handleViewProfile(user.uid)}
+                                                                    onClick={() => handleViewProfile(user.id)}
                                                                 >
                                                                     View Profile
                                                                 </button>
@@ -397,7 +396,7 @@ export default function Community({user}: {user: any}) {
                                                             <div className={styles.buttons}>
                                                                 <button
                                                                     className={styles.removeButton}
-                                                                    onClick={() => handleViewProfile(user.uid)}
+                                                                    onClick={() => handleViewProfile(user.id)}
                                                                 >
                                                                     View Profile
                                                                 </button>

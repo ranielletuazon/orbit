@@ -117,7 +117,6 @@ export default function Room({ user }: { user: any }) {
                         })
                         .catch(err => {
                             console.error("Error playing local video:", err);
-                            toast.error("Error displaying your camera. Please refresh the page.");
                         });
                 } else {
                     console.error("Local video ref is not available");
@@ -459,11 +458,9 @@ export default function Room({ user }: { user: any }) {
                                             playsInline 
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         />
-                                        {!isConnected && <div className={styles.waitingText}>Waiting for other participant...</div>}
+                                        {!isConnected && <div className={styles.waitingText}><Loader/></div>}
                                         {isConnected && <div className={styles.participantName}>Stranger</div>}
                                     </div>
-                                </div>
-                                <div className={styles.menuSection}>
                                     <div className={styles.callControls}>
                                         <button 
                                             className={`${styles.controlButton} ${isMuted ? styles.controlButtonActive : ''}`} 

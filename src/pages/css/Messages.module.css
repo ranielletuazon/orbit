@@ -385,6 +385,12 @@
     
 }
 
+.emptySpace{
+    flex: 1;
+    height: 100%;
+    display: flex;
+}
+
 @media screen and (min-height: 1080px) {
     .pageContainer {
         height: 1080px;

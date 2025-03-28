@@ -12,7 +12,6 @@ import Home from './pages/Home';
 import Register from './pages/Register';
 import Space from './pages/Space';
 import AccountSetup from './pages/AccountSetup';
-import Settings from './pages/Settings';
 import Community from './pages/Community';
 import Profile from './pages/Profile';
 import Messages from './pages/Messages';
@@ -121,7 +120,6 @@ function App() {
           <Route path='/register' element={<Register />} />
           <Route path='/space' element={<ProtectedRoute><Space user={user} /></ProtectedRoute>} />
           <Route path='/setup' element={<ProtectedRoute><AccountSetup user={user} currentUser={currentUser} /></ProtectedRoute>} />
-          <Route path='/settings' element={<ProtectedRoute><Settings user={user} currentUser={currentUser} /></ProtectedRoute>} />
           <Route path='/profile' element={<ProtectedRoute><Profile user={user} currentUser={currentUser} /></ProtectedRoute>} />
           <Route path='/community' element={<ProtectedRoute><Community user={user} /></ProtectedRoute>} />
           <Route path='/messages' element={<ProtectedRoute><Messages user={user} /></ProtectedRoute>} />
