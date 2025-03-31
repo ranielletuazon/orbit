@@ -7,6 +7,7 @@ import { ref, onValue, off, get, onChildChanged } from 'firebase/database';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Loader from '../components/loader'
+import suitSpace from '../assets/spacesuit.gif'
 
 export default function Community({user}: {user: any}) {
 
@@ -60,6 +61,41 @@ export default function Community({user}: {user: any}) {
             return () => unsubscribe();
     }, []);
 
+    // Live friends Update
+    useEffect(() => {
+        if (!currentUser?.friends || currentUser.friends.length === 0) return;
+    
+        const unsubscribeList = currentUser.friends.map((friendId: string) => {
+            const friendRef = doc(db, 'user', friendId);
+    
+            return onSnapshot(friendRef, async (docSnap) => {
+                if (docSnap.exists()) {
+                    const friendData = docSnap.data();
+                    const statusRef = ref(realtimeDb, `users/${friendId}/status`);
+    
+                    try {
+                        const statusSnap = await get(statusRef);
+                        setFriendsData((prevData) => [
+                            ...prevData.filter((f) => f.uid !== friendId), // Remove old entry
+                            {
+                                ...friendData,
+                                uid: friendId,
+                                status: statusSnap.exists() ? statusSnap.val() : "offline",
+                            },
+                        ]);
+                    } catch (error) {
+                        console.error("Error fetching status:", error);
+                    }
+                }
+            });
+        });
+    
+        return () => {
+            unsubscribeList.forEach((unsubscribe: any) => unsubscribe());
+        };
+    }, [currentUser]);
+    
+
     // Live updates for online status
     useEffect(() => {
         if (friendsData.length === 0) return;
@@ -110,38 +146,6 @@ export default function Community({user}: {user: any}) {
                 }
             }
 
-            // outside function implement
-            // Still not live
-            const fetchFriends = async () => {
-                try {
-                    const friends: string[] = fetchedUserData?.friends || [];
-                    if (friends.length > 0) {
-                        // Fetch user documents in parallel
-                        const friendsDataPromise = await Promise.all(
-                            friends.map(async (uid) => {
-                                const userDocRef = doc(db, "user", uid);
-                                const userDocSnap = await getDoc(userDocRef);
-        
-                                const statusRef = ref(realtimeDb, `users/${uid}/status`);
-                                const statusSnap = await get(statusRef);
-        
-                                return {
-                                    ...userDocSnap.data(),
-                                    uid,
-                                    status: statusSnap.exists() ? statusSnap.val() : "offline", // Default to offline
-                                };
-                            })
-                        );
-        
-                        setFriendsData(friendsDataPromise);
-                    } else {
-                        setFriendsData([]);
-                    }
-                } catch (error) {
-                    console.error("Error fetching friends:", error);
-                }
-            };
-
             const fetchPending = async () => {
                 try {
                     const pendingRequests: string[] = fetchedUserData.pendingRequests;
@@ -167,7 +171,6 @@ export default function Community({user}: {user: any}) {
             }
 
             fetchFriendRequests();
-            fetchFriends();
             fetchPending();
             setTimeout(() => {
                 setTotalLoad(false);
@@ -279,7 +282,7 @@ export default function Community({user}: {user: any}) {
                                                             <div className={styles.profileSection}>
                                                                 <div
                                                                     className={styles.profileDisplay}
-                                                                    style={{ backgroundImage: `url(${user.profileImage})` }}
+                                                                    style={user.profileImage ? { backgroundImage: `url(${user.profileImage})` } : {}}
                                                                 >
                                                                 </div>
                                                                 <div className={styles.profileInfo}>
@@ -308,7 +311,10 @@ export default function Community({user}: {user: any}) {
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <div className={styles.friendContent}>No Friends Yet</div>
+                                                    <div className={styles.friendContent}>
+                                                        <img src={suitSpace} alt="spacesuit guy" />
+                                                        <div>You have no Friends yet</div>
+                                                    </div>
                                                 )}
                                             </>
                                         ) : currentTarget === "friendRequests" ? (
@@ -364,7 +370,10 @@ export default function Community({user}: {user: any}) {
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <div className={styles.friendContent}>No Requests Yet</div>
+                                                    <div className={styles.friendContent}>
+                                                        <img src={suitSpace} alt="spacesuit guy" />
+                                                        <div>You have no Friend Requests yet</div>
+                                                    </div>
                                                 )}
                                             </>
                                         ) : (
@@ -412,7 +421,10 @@ export default function Community({user}: {user: any}) {
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <div className={styles.friendContent}>Discover People at Space!</div>
+                                                    <div className={styles.friendContent}>
+                                                        <img src={suitSpace} alt="spacesuit guy" />
+                                                        <div>Your Pending Request is Empty</div>
+                                                    </div>
                                                 )}
                                             </>
                                         )}      

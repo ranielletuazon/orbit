@@ -1,5 +1,5 @@
 .container{
-    background-color: hsl(0, 0%, 15%);
+    background: linear-gradient(135deg, hsl(0, 0%, 10%) 0%, hsl(196, 100%, 5%) 100%);
     width: 100%;
     height: 100vh;
     display: flex;
@@ -189,6 +189,16 @@
 
 .offline{
     color: hsl(0, 0%, 35%)
+}
+
+.friendContent{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
 }
 
 @media screen and (min-height: 1080px) {
