@@ -18,6 +18,7 @@ import Messages from './pages/Messages';
 import Rocket from './pages/Rocket';
 import NotFound from './NotFound';
 import Room from './pages/Room';
+import Conversation from './pages/Conversation'
 
 import './App.css';
 
@@ -125,6 +126,7 @@ function App() {
           <Route path='/messages' element={<ProtectedRoute><Messages user={user} /></ProtectedRoute>} />
           <Route path='/rocket' element={<ProtectedRoute><Rocket user={user}/></ProtectedRoute>} />
           <Route path='/rocket/:roomID' element={<ProtectedRoute><Room user={user}/></ProtectedRoute>} />
+          <Route path='/conversation' element={<ProtectedRoute><Conversation user={user}/></ProtectedRoute>} />
           {/* Catch all component */}
           <Route path='*' element={<NotFound user={user} />} />
         </Routes>

@@ -80,7 +80,7 @@ export default function Header({ user }: { user: any }){
                 <div className={styles.menubar}>
                     <div className={styles.menus}>
                         <button onClick={() => navigate('/space')} className={styles.menuButton}><i className="fa-solid fa-house" ></i></button>
-                        <button className={styles.menuButton}><i className="fa-solid fa-gamepad" ></i></button>
+                        <button onClick={() => navigate('/conversation')} className={styles.menuButton}><i className="fa-solid fa-gamepad" ></i></button>
                         <button onClick={() => navigate('/rocket')} className={styles.menuButton}><i className="fa-solid fa-rocket" ></i></button>
                     </div>
                     <div className={styles.menus}>

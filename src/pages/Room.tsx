@@ -482,6 +482,9 @@ export default function Room({ user }: { user: any }) {
                                         </button>
                                     </div>
                                 </div>
+                                <div className={styles.chatSection}>
+                                    
+                                </div>
                             </div>
                         </div>
                     </div>
