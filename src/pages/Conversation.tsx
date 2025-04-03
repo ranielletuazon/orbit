@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './css/Conversation.module.css';
+import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../components/firebase/firebase';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, Timestamp } from 'firebase/firestore';
 import Loader from '../components/loader';
@@ -7,10 +8,39 @@ import Loader from '../components/loader';
 import Header from '../components/Header';
 
 export default function Conversation({user}: {user: any}) {
+    const navigate = useNavigate();
+    const url = new URL(window.location.href);
+    const postId = url.searchParams.get('postId');
 
     const [discussionPosts, setDiscussionPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [createPost, setCreatePost] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<any>(null);
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'single'
+
+    // Detects link changes
+    useEffect(() => {
+        if (!postId) {
+            setSelectedPost(null);
+        }
+        const fetchPost = async () => {
+            try {
+                if (!postId) return new Error("No post id");
+                const postRef = doc(db, 'userConversation', postId);
+                const postSnap = await getDoc(postRef);
+
+                if (postSnap.exists()){
+                    const postData = postSnap.data();
+                    setSelectedPost(postData);
+                } else {
+                    navigate('/404')
+                }
+            } catch (e) {
+                console.log("Error", e)
+            }
+        }
+        fetchPost();
+    }, [postId]);
 
     useEffect(() => {
         let unsubscribe: any;
@@ -171,78 +201,117 @@ export default function Conversation({user}: {user: any}) {
         }
     }
 
+    // Formats number to k, m, b
+    const formatNumber = (num: number) => {
+        if (num < 1000) return num.toString();
+        if (num < 1000000) return (num / 1000).toFixed(0) + 'k';
+        if (num < 1000000000) return (num / 1000000).toFixed(0) + 'm';
+        return (num / 1000000000).toFixed(0) + 'b';
+    }
+
     return(
         <>
             <div className={styles.container}>
                 <div className={styles.page}>
                     <div className={styles.pageContainer}>
                         <Header user={user}></Header>
-                        <button 
-                            className={styles.createButtonPost}
-                            onClick={() => setCreatePost(true)}
-                            >
-                                Create Post +
-                        </button>
-                        <div className={styles.postHolder}>
-                            <div className={styles.postHeader}>
-                                <div className={styles.headerContext}>Discussions</div>
-                            </div>
-                            <div className={styles.postSection}>
-                                {loading ? (
-                                    <div className={styles.loaderPlace}>
-                                        <Loader />
+                        {!selectedPost ? (
+                            <>
+                                <button 
+                                    className={styles.createButtonPost}
+                                    onClick={() => setCreatePost(true)}
+                                    >
+                                        Create Post +
+                                </button>
+                                <div className={styles.postHolder}>
+                                    <div className={styles.postHeader}>
+                                        <div className={styles.headerContext}>Discussions</div>
                                     </div>
-                                ) : discussionPosts.length === 0 ? (
-                                    <div className={styles.noPosts}>No discussions found. Start one by creating a post!</div>
-                                ) : (
-                                    discussionPosts.map((post: any, index: number) => (
-                                        <div key={post.id || index} className={styles.post}>
-                                            <div className={styles.topContext}>
-                                                <div className={styles.posterDescription}>
-                                                    <div className={styles.posterProfile} style={{backgroundImage: `url(${post.posterProfileImage})`}}></div>
-                                                    <div className={styles.posterName}>{post.posterUsername}</div>   
-                                                    <div className={styles.posterTime}>{getRelativeTime(post.postTimestamp)}</div>
-                                                </div>
-                                                <div className={styles.posterButtons}>
-                                                    <button className={styles.heartButton}>
-                                                        <i className="fa-solid fa-fire"></i>
-                                                        {post.karma?.length || 0}
-                                                    </button>
-                                                </div>
+                                    <div className={styles.postSection}>
+                                        {loading ? (
+                                            <div className={styles.loaderPlace}>
+                                                <Loader />
                                             </div>
-                                            <div className={styles.midContext}>
-                                                <div className={styles.left}>
-                                                    <div className={styles.descriptionHeader}>{post.postHeader}</div>
-                                                    <div className={styles.descriptionBody}>
-                                                        {post.image && post.postMessage?.length > 170 
-                                                            ? post.postMessage.slice(0, 170) + '...' 
-                                                            : post.postMessage}
+                                        ) : discussionPosts.length === 0 ? (
+                                            <div className={styles.noPosts}>No discussions found. Start one by creating a post!</div>
+                                        ) : (
+                                            discussionPosts.map((post: any, index: number) => (
+                                                <div key={post.id || index} className={styles.post} onClick={() => navigate(`/conversation?postId=${post.id}`)}>
+                                                    <div className={styles.topContext}>
+                                                        <div className={styles.posterDescription}>
+                                                            <div className={styles.posterProfile} style={{backgroundImage: `url(${post.posterProfileImage})`}}></div>
+                                                            <div className={styles.posterName}>{post.posterUsername}</div>   
+                                                            <div className="" style={{fontWeight: 'bold'}}>·</div>
+                                                            <div className={styles.posterTime}>{getRelativeTime(post.postTimestamp)}</div>
+                                                        </div>
+                                                        <div className={styles.posterButtons}>
+                                                            <button className={styles.fireButton} style={{color: post.karma?.includes(user.uid) ? 'orangered' : ''}} onClick={(e) => {e.stopPropagation();handleGiveKarma(post.id);}}>
+                                                                <i className="fa-solid fa-fire" style={{color: post.karma?.includes(user.uid) ? 'orangered' : ''}}></i>
+                                                                {formatNumber(post.karma?.length || 0)}
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <div className={styles.descriptionFooter}>
-                                                        <button className={styles.footerButton}>
-                                                            <i className="fa-regular fa-comment"></i> {post.comments?.length === 0 ? '' : post.comments?.length} Comments
-                                                        </button>
-                                                        <button className={styles.footerButton}>
-                                                            <i className="fa-solid fa-share-nodes"></i> Share
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => handleGiveKarma(post.id)} 
-                                                            className={styles.footerButton}
-                                                        >
-                                                            <i className={`fa-solid fa-fire ${post.karma?.includes(user?.uid) ? styles.active : ''}`}></i> 
-                                                            <p className={`${post.karma?.includes(user?.uid) ? styles.active : ''}`}>{post.karma?.includes(user?.uid) ? 'Karma Given' : 'Give Karma'}</p>
-                                                        </button>
-                                                    </div> 
+                                                    <div className={styles.midContext}>
+                                                        <div className={styles.left}>
+                                                            <div className={styles.descriptionHeader}>{post.postHeader}</div>
+                                                            <div className={styles.descriptionBody}>
+                                                                {post.image && post.postMessage?.length > 100 
+                                                                    ? post.postMessage.slice(0, 100) + '...' 
+                                                                    : post.postMessage?.length > 170 
+                                                                        ? post.postMessage.slice(0, 170) + '...' 
+                                                                        : post.postMessage}
+                                                            </div>
+                                                            <div className={styles.descriptionFooter}>
+                                                                <button className={styles.footerButton}>
+                                                                    <i className="fa-regular fa-comment"></i> {post.comments?.length === 0 ? '' : post.comments?.length} Comments
+                                                                </button>
+                                                                <button className={styles.footerButton}>
+                                                                    <i className="fa-solid fa-share-nodes"></i> Share
+                                                                </button>
+                                                                <button 
+                                                                    onClick={(e) => {e.stopPropagation();handleGiveKarma(post.id);}} 
+                                                                    className={`${styles.footerButton} ${styles.anotherStyle}`}
+                                                                >
+                                                                    <i className={`fa-solid fa-fire ${post.karma?.includes(user?.uid) ? styles.active : ''}`}></i> 
+                                                                    <p className={`${post.karma?.includes(user?.uid) ? styles.active : ''}`}>{post.karma?.includes(user?.uid) ? 'Karma Given' : 'Give Karma'}</p>
+                                                                </button>
+                                                            </div> 
+                                                        </div>
+                                                        <div className={styles.right}>
+                                                            {post.image && <div className={styles.imagePreview} style={{backgroundImage: `url(${post.image})`}}></div>}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className={styles.right}>
-                                                    {post.image && <div className={styles.imagePreview} style={{backgroundImage: `url(${post.image})`}}></div>}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div> 
+                                            ))
+                                        )}
+                                    </div>
+                                </div> 
+                            </>
+                        ): (
+                            <>
+                                <div className={styles.currentPostContainer}>
+                                    <div className={styles.currentPostContent}>
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                    </div>
+                                    <div className={styles.currentPostComments}></div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
                 {createPost && 
