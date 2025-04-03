@@ -179,18 +179,18 @@ export default function Conversation({user}: {user: any}) {
             });
             
             // Add the new post to our state
-            const newPost = {
-                id: newPostRef.id,
-                postHeader: titleInput.value.trim(),
-                postMessage: messageInput.value.trim(),
-                posterUsername: userData.username || 'Anonymous',
-                posterProfileImage: userData.profileImage || '',
-                postTimestamp: Timestamp.now(),
-                karma: [],
-                comments: []
-            };
+            // const newPost = {
+            //     id: newPostRef.id,
+            //     postHeader: titleInput.value.trim(),
+            //     postMessage: messageInput.value.trim(),
+            //     posterUsername: userData.username || 'Anonymous',
+            //     posterProfileImage: userData.profileImage || '',
+            //     postTimestamp: Timestamp.now(),
+            //     karma: [],
+            //     comments: []
+            // };
             
-            setDiscussionPosts(prev => [newPost, ...prev]);
+            // setDiscussionPosts(prev => [newPost, ...prev]);
             
             // Close the create post modal
             setCreatePost(false);
