@@ -3,8 +3,10 @@ import styles from './css/Conversation.module.css';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../components/firebase/firebase';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, Timestamp } from 'firebase/firestore';
-import Loader from '../components/loader';
+import { toast } from 'sonner';
 
+import ufo from '../assets/ufo.png';
+import Loader from '../components/loader';
 import Header from '../components/Header';
 
 export default function Conversation({user}: {user: any}) {
@@ -17,9 +19,16 @@ export default function Conversation({user}: {user: any}) {
     const [createPost, setCreatePost] = useState(false);
     const [selectedPost, setSelectedPost] = useState<any>(null);
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'single'
+    const [isConsidered, setIsConsidered] = useState(false);
+    const [karmaState, setKarmaState] = useState(false);
+    const [karmaLength, setKarmaLength] = useState(0);
+    const [commentState, setCommentState] = useState<string>('');
+    const [comments, setComments] = useState<any[]>([]);
+
 
     // Detects link changes
     useEffect(() => {
+        setKarmaState(false);
         if (!postId) {
             setSelectedPost(null);
         }
@@ -29,9 +38,17 @@ export default function Conversation({user}: {user: any}) {
                 const postRef = doc(db, 'userConversation', postId);
                 const postSnap = await getDoc(postRef);
 
+                // Insert confirmCheckFriendOrNot
+                confirmCheckFriendOrNot(postId);
+
                 if (postSnap.exists()){
                     const postData = postSnap.data();
+                    if (postData.karma && postData.karma.includes(user.uid)) {
+                        setKarmaState(true);
+                    }
+                    setKarmaLength(postData.karma?.length || 0);
                     setSelectedPost(postData);
+                    setComments(postData.comments || []);
                 } else {
                     navigate('/404')
                 }
@@ -77,6 +94,10 @@ export default function Conversation({user}: {user: any}) {
 
     const handleGiveKarma = async (postId: string) => {
         if (!user) return;
+        setKarmaState(true);
+        if (!karmaState) {
+            setKarmaLength((prev) => prev + 1);
+        }
         
         try {
             const postRef = doc(db, 'userConversation', postId);
@@ -87,6 +108,8 @@ export default function Conversation({user}: {user: any}) {
                 const karmaArray = postData.karma || [];
                 
                 if (karmaArray.includes(user.uid)) {
+                    setKarmaState(false);
+                    setKarmaLength((prev) => prev - 1);
                     // User already gave karma, remove it
                     await updateDoc(postRef, {
                         karma: arrayRemove(user.uid)
@@ -100,6 +123,8 @@ export default function Conversation({user}: {user: any}) {
             }
         } catch (error) {
             console.error("Error updating karma:", error);
+            setKarmaState(false);
+            setKarmaLength((prev) => prev - 1);
         }
     };
 
@@ -168,6 +193,7 @@ export default function Conversation({user}: {user: any}) {
             
             // Create the post document
             await setDoc(newPostRef, {
+                id: newPostRef.id,
                 posterId: user.uid,
                 postHeader: titleInput.value.trim(),
                 postMessage: messageInput.value.trim(),
@@ -199,7 +225,7 @@ export default function Conversation({user}: {user: any}) {
             console.error("Error creating post:", error);
             alert("Failed to create post. Please try again.");
         }
-    }
+    };
 
     // Formats number to k, m, b
     const formatNumber = (num: number) => {
@@ -207,7 +233,137 @@ export default function Conversation({user}: {user: any}) {
         if (num < 1000000) return (num / 1000).toFixed(0) + 'k';
         if (num < 1000000000) return (num / 1000000).toFixed(0) + 'm';
         return (num / 1000000000).toFixed(0) + 'b';
-    }
+    };
+
+    // This does confirmCheckFriendOrNot then change the state buttons
+    const confirmCheckFriendOrNot = async (postId: string) => {
+        try {
+            const postRef = doc(db, 'userConversation', postId);
+            const postSnap = await getDoc(postRef);
+            const postData = postSnap.data();
+
+            const userDocRef = doc(db, 'user', postData?.posterId);
+            const userSnap = await getDoc(userDocRef);
+
+            if (userSnap.exists()) {
+
+                const userData = userSnap.data();
+                console.log(userData);
+
+                let consider = [...(userData?.friends || []), ...(userData?.friendRequests || [])];
+
+                if (consider.includes(user.uid) || postData?.posterId === user.uid) {
+                    setIsConsidered(true);
+                } else {
+                    setIsConsidered(false);
+                }
+            }
+        
+        } catch (e) {
+
+        }
+    };
+
+    // This handles the comments
+    const handleComment = async (e: React.FormEvent) => {
+        e.preventDefault();
+    
+        if (!commentState.trim()) return;
+    
+        const commentToState = {
+            comment: commentState,
+            userId: user.uid,
+            createdAt: new Date(),
+            username: "",
+            profileImage: "",
+        };
+    
+        setCommentState("");
+        console.log(commentState);
+    
+        try {
+            const postRef = doc(db, 'userConversation', selectedPost?.id);
+            const postSnap = await getDoc(postRef);
+    
+            const userRef = doc(db, 'user', user.uid);
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.data();
+    
+            if (userData) {
+                commentToState.username = userData.username;
+                commentToState.profileImage = userData.profileImage;
+            }
+    
+            if (postSnap.exists()) {
+                await updateDoc(postRef, {
+                    comments: arrayUnion(commentToState)
+                });
+    
+                setComments(prev => [...prev, commentToState]);
+                console.log(commentToState);
+            }
+        } catch (e) {
+            console.error("Failed to add comment:", e);
+            // Keep previous state on error
+            setCommentState(prev => prev);
+        }
+    };    
+
+    // This handles the friend request, assuming that the system can read if its already a friend.
+    const handleFriendRequest = async (requestId: string) => {
+        setIsConsidered(true);
+        console.log(requestId);
+
+        try {
+            if (!requestId) {
+                return;
+            }
+            if (!user || !user.uid) {
+                return;
+            }
+
+            // Other user data
+            const userDocRef = doc(db, "user", requestId);
+            const userDoc = await getDoc(userDocRef);
+
+            const currentUserDocRef = doc(db, "user", user.uid);
+            const currentUser = await getDoc(currentUserDocRef);
+
+            const userData = userDoc.data();
+            const currentUserData = currentUser.data();
+            const friendsList = userData?.friends || [];
+
+            // Check if already friends
+            if (friendsList.includes(user.uid)) {
+                toast.info(
+                    `You are already friends with ${userData?.username}.`
+                );
+                return;
+            }
+
+            // Check if already in pending requests
+            if (currentUserData?.pendingRequests?.includes(userData?.id)) {
+                toast.info(
+                    `You have already sent a friend request to ${userData?.username}.`
+                );
+                return;
+            }
+
+            toast.success("Friend Request Sent to " + userData?.username);
+
+            await updateDoc(userDocRef, {
+                friendRequests: arrayUnion(user.uid),
+            });
+
+            await updateDoc(currentUserDocRef, {
+                pendingRequests: arrayUnion(userData?.id),
+            });
+        } catch (error) {
+            toast.error("Error sending friend request:");
+            console.error("Error", error)
+            setIsConsidered(false);
+        }
+    };
 
     return(
         <>
@@ -217,17 +373,17 @@ export default function Conversation({user}: {user: any}) {
                         <Header user={user}></Header>
                         {!selectedPost ? (
                             <>
-                                <button 
-                                    className={styles.createButtonPost}
-                                    onClick={() => setCreatePost(true)}
-                                    >
-                                        Create Post +
-                                </button>
-                                <div className={styles.postHolder}>
+                                <div className={styles.currentPostContainer}>
                                     <div className={styles.postHeader}>
                                         <div className={styles.headerContext}>Discussions</div>
+                                        <button 
+                                            className={styles.createButtonPost}
+                                            onClick={() => setCreatePost(true)}
+                                            >
+                                                Create Post +
+                                        </button>
                                     </div>
-                                    <div className={styles.postSection}>
+                                    <div className={styles.postSection} style={{height: !loading ? '' : '100%'}}>
                                         {loading ? (
                                             <div className={styles.loaderPlace}>
                                                 <Loader />
@@ -263,7 +419,7 @@ export default function Conversation({user}: {user: any}) {
                                                             </div>
                                                             <div className={styles.descriptionFooter}>
                                                                 <button className={styles.footerButton}>
-                                                                    <i className="fa-regular fa-comment"></i> {post.comments?.length === 0 ? '' : post.comments?.length} Comments
+                                                                    <i className="fa-regular fa-comment"></i> {post.comments?.length === 0 ? '' : post.comments?.length} {post.comments?.length === 1 ? 'Comment' : 'Comments'} 
                                                                 </button>
                                                                 <button className={styles.footerButton}>
                                                                     <i className="fa-solid fa-share-nodes"></i> Share
@@ -290,25 +446,107 @@ export default function Conversation({user}: {user: any}) {
                         ): (
                             <>
                                 <div className={styles.currentPostContainer}>
-                                    <div className={styles.currentPostContent}>
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
-                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore perferendis minima consequatur fugit quasi molestias illum nesciunt, nihil consectetur harum autem reprehenderit dignissimos voluptate eveniet dolorem sequi, distinctio necessitatibus alias.
+                                    {selectedPost.imagePost ? 
+                                        (
+                                            <div className={styles.imageHeader}>
+                                                
+                                            </div>
+                                        ) : (
+                                            <div className={styles.noImage}>
+                                                <img src={ufo} alt="UFO" />
+                                                No image/s attached
+                                            </div>
+                                        )
+                                    }
+                                    <div className={styles.currentPost} style={selectedPost ? {} : {height: '100%'}} >
+                                        { selectedPost ? (
+                                            <>
+                                                <div className={styles.leftSection}>
+                                                    <div className={styles.headerPost}>
+                                                        <div className={styles.headerText}>{selectedPost.postHeader}</div>
+                                                        <div className={styles.headerKarmaDisplay}>
+                                                            <i className="fa-solid fa-fire"></i>
+                                                            {karmaLength}
+                                                        </div>
+                                                        
+                                                    </div>
+                                                    <div className={styles.bodyPost}>{selectedPost.postMessage}</div>
+                                                    <div className={styles.commentSection}>
+                                                        <div className={styles.commentHeader}>{comments.length || 0} {comments.length === 1 ? 'Comment' : 'Comments'}</div>
+                                                        <form onSubmit={handleComment} className={styles.commentBox}>
+                                                            <input type="text" name="comment" id="" placeholder='Write a comment...' value={commentState} onChange={(e) => setCommentState(e.target.value)}/>
+                                                            <button type="submit">Comment</button>
+                                                        </form>
+                                                        <div className={styles.commentHolder}>
+                                                            {comments.length > 0 && (
+                                                                <>
+                                                                    {comments.map((comment) => (
+                                                                        <div key={comment.id} className={styles.commentCard}>
+                                                                            <div className={styles.commentProfileDisplay} style={{backgroundImage: `url(${comment.profileImage})`}}></div>
+                                                                            <div className={styles.commentDescription}>
+                                                                                <div className={styles.commenterUsername}>{comment.username}</div>
+                                                                                <div className={styles.commentDate}>
+                                                                                {(comment.createdAt instanceof Date
+                                                                                    ? comment.createdAt
+                                                                                    : comment.createdAt.toDate()
+                                                                                ).toLocaleDateString('en-US', {
+                                                                                    year: 'numeric',
+                                                                                    month: 'long',
+                                                                                    day: 'numeric',
+                                                                                })}
+                                                                                </div>
+                                                                                <div className={styles.commentDisplay}>{comment.comment}</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.rightSection}>
+                                                    <div className={styles.profileDisplaySection}>
+                                                        <div className={styles.profileImageDisplay} style={{backgroundImage: `url(${selectedPost.posterProfileImage})`}}></div>
+                                                        <div className={styles.profileDescriptionDisplay}>
+                                                            <div className={styles.profileUsernameDisplay}>@{selectedPost.posterUsername}</div>
+                                                            <div className={styles.datePostedDisplay}>
+                                                                {selectedPost.postTimestamp?.toDate().toLocaleDateString('en-US', {
+                                                                    year: 'numeric',
+                                                                    month: 'long',
+                                                                    day: 'numeric',
+                                                                })} at {selectedPost.postTimestamp?.toDate().toLocaleTimeString('en-US', {
+                                                                    hour: 'numeric',
+                                                                    minute: '2-digit',
+                                                                    hour12: true,
+                                                                })}
+                                                            </div>
+                                                            {/* if friend, self, or at least sent a request this should appear */}
+                                                            {isConsidered ? (
+                                                                <>
+                                                                    <button className={styles.viewProfileButton} onClick={() => navigate(`/profile?id=${selectedPost.posterId}`)}>View Profile</button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button className={styles.addFriendButton} onClick={() => handleFriendRequest(selectedPost.posterId)}>Add Friend</button>
+                                                                </>                                                            
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className={styles.actionsSection}>
+                                                        <button className={styles.actionButton} onClick={() => handleGiveKarma(selectedPost.id)}><i className="fa-solid fa-fire" style={karmaState ? {color: 'orangered'} : {}}></i></button>
+                                                        <button className={styles.actionButton}><i className="fa-solid fa-share"></i></button>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* just reload the page, nothing special yet */}
+                                                <div className={styles.displayMessageError} onClick={() => window.location.reload()}>
+                                                    Error: Reload post <i className="fa-solid fa-rotate-right"></i>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                    <div className={styles.currentPostComments}></div>
                                 </div>
                             </>
                         )}
