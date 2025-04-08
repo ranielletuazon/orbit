@@ -4,6 +4,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    color: hsl(0, 0%, 50%);
 }
 
 .profileCard{
@@ -43,6 +44,9 @@
     align-items: center;
     gap: 1rem;
     border-radius: 10px;
+
+    /* Since its still not functioning */
+    /* filter: blur(5px); */
 }
 
 .percentageSection{
@@ -197,6 +201,9 @@
             height: 5em;
             border-radius: 50%;
             background-color: hsl(0, 0%, 50%);
+
+            background-size: cover;
+            background-position: center;
         }
 
         .profileMenu{
@@ -234,6 +241,7 @@
             font-size: 1rem;
             border: none;
             background: hsl(0, 0%, 40%);
+            color: hsl(0, 0%, 90%);
         }
 
         button{
@@ -244,6 +252,12 @@
             color: white;
             font-weight: 500;
             border-radius: 5px;
+        }
+
+        button:disabled{
+            background-color: #a0a0a0;
+            color: #4d4c4c;
+            cursor: not-allowed;
         }
 
         input::placeholder{
@@ -320,6 +334,10 @@
     
     .modalOverlay .rightSection {
         padding: 0;
+    }
+
+    .circlePercentage{
+        display: none;
     }
 }
 
