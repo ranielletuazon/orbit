@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'
 import styles from './css/ProfileSettings.module.css';
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { db } from '../components/firebase/firebase';
+import { db, storage } from '../components/firebase/firebase';
 import { doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'sonner';
 import Loader from './loader';
 
@@ -17,12 +19,24 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
     let percentage = 35;
     const [setting, setSetting] = useState<string>('account');
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const navigate = useNavigate();
+    
+    // Refs for file inputs
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
+    const backgroundImageInputRef = useRef<HTMLInputElement>(null);
+    
+    // Loading state for image uploads
+    const [uploadingProfile, setUploadingProfile] = useState(false);
+    const [uploadingBackground, setUploadingBackground] = useState(false);
     
     // Form state
     const [formData, setFormData] = useState({
         username: '',
         bio: '',
-        nickname: ''
+        nickname: '',
+        // Images
+        profileImage: '',
+        backgroundImage: ''
     });
     
     // Loading state for form submission
@@ -35,6 +49,76 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
             ...prev,
             [name]: value
         }));
+    };
+
+    // Trigger file input click
+    const triggerProfileImageUpload = () => {
+        profileImageInputRef.current?.click();
+    };
+    
+    const triggerBackgroundImageUpload = () => {
+        backgroundImageInputRef.current?.click();
+    };
+    
+    // Handle image file uploads
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, imageType: 'profileImage' | 'backgroundImage') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please select an image file');
+            return;
+        }
+        
+        // File size validation (limit to 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image size should be less than 5MB');
+            return;
+        }
+        
+        try {
+            if (imageType === 'profileImage') {
+                setUploadingProfile(true);
+            } else {
+                setUploadingBackground(true);
+            }
+            
+            // Create a storage reference
+            const storageRef = ref(storage, `users/${user.uid}/${imageType}/${file.name}`);
+            
+            // Upload file
+            await uploadBytes(storageRef, file);
+            
+            // Get download URL
+            const downloadURL = await getDownloadURL(storageRef);
+            
+            // Update formData with new image URL
+            setFormData(prev => ({
+                ...prev,
+                [imageType]: downloadURL
+            }));
+            
+            // Update user document in Firestore directly
+            const userRef = doc(db, 'user', user.uid);
+            await updateDoc(userRef, {
+                [imageType]: downloadURL
+            });
+            
+            toast.success(`${imageType === 'profileImage' ? 'Profile' : 'Background'} image updated!`);
+            
+        } catch (error) {
+            console.error(`Error uploading ${imageType}:`, error);
+            toast.error(`Failed to upload ${imageType === 'profileImage' ? 'profile' : 'background'} image`);
+        } finally {
+            if (imageType === 'profileImage') {
+                setUploadingProfile(false);
+            } else {
+                setUploadingBackground(false);
+            }
+            // Reset the file input
+            e.target.value = '';
+        }
     };
 
     // Handle form submission
@@ -66,6 +150,8 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
             if (formData.nickname !== currentUser?.nickname) {
                 updateData.nickname = formData.nickname || '';
             }
+
+            // We're handling image updates separately now, so we don't need to include them here
             
             // Only update if there are changes
             if (Object.keys(updateData).length > 0) {
@@ -76,7 +162,7 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
             }
             
             // Close the modal after successful update
-            onClose();
+            // onClose();
             
         } catch (error) {
             console.error("Error updating profile:", error);
@@ -110,7 +196,9 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
                     setFormData({
                         username: userData.username || '',
                         bio: userData.bio || '',
-                        nickname: userData.nickname || ''
+                        nickname: userData.nickname || '',
+                        profileImage: userData.profileImage || '',
+                        backgroundImage: userData.backgroundImage || ''
                     });
                 } else {
                     console.warn('User document does not exist');
@@ -147,6 +235,16 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
     
     // Calculate percentage dynamically
     const profilePercentage = calculateProfileCompletion();
+
+    // Handle View Profile navigation
+    const handleViewProfile = () => {
+        if (!user?.uid) {
+            toast.error("An error occured, reload the page and try again");
+            return;
+        }
+        navigate(`/profile?id=${user.uid}`);
+        onClose();
+    }
 
     // If modal is not open, don't render anything
     if (!isOpen) return null;
@@ -188,8 +286,8 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
                             >
                                 <i className="fa-solid fa-user"></i>
                                 <div className={styles.buttonHeader}>
-                                    <div className={styles.headerText}>Account Information</div>
-                                    <div className={styles.bodyText}>Change your account details</div>
+                                    <div className={styles.headerText}>Profile Details</div>
+                                    <div className={styles.bodyText}>Change your profile information</div>
                                 </div>
                             </button>
                             <button 
@@ -198,24 +296,71 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
                             >
                                 <i className="fa-solid fa-lock"></i>
                                 <div className={styles.buttonHeader}>
-                                    <div className={styles.headerText}>Password</div>
+                                    <div className={styles.headerText}>Security</div>
                                     <div className={styles.bodyText}>Change your password</div>
                                 </div>
                             </button>
                         </div>
                     </div>
                     <div className={styles.rightSection}>
-                        <div className={styles.headerTitle}>{setting === 'account' ? 'Account Information' : 'Password'}</div>
+                        <div className={styles.headerTitle}>{setting === 'account' ? 'Profile Details' : 'Security'}</div>
                         {setting === 'account' ? (
                             <>
-                                <div className={styles.backgroundDisplay}>
-                                    <button>Upload Background Image</button>
+                                {/* Hidden file inputs */}
+                                <input 
+                                    type="file" 
+                                    ref={profileImageInputRef} 
+                                    onChange={(e) => handleImageUpload(e, 'profileImage')} 
+                                    accept="image/*" 
+                                    style={{ display: 'none' }} 
+                                />
+                                <input 
+                                    type="file" 
+                                    ref={backgroundImageInputRef} 
+                                    onChange={(e) => handleImageUpload(e, 'backgroundImage')} 
+                                    accept="image/*" 
+                                    style={{ display: 'none' }} 
+                                />
+                                
+                                <div className={styles.backgroundDisplay} 
+                                    style={{
+                                        backgroundImage: formData.backgroundImage ? `url(${formData.backgroundImage})` : 'none',
+                                        backgroundSize: 'cover',
+                                        backgroundPosition: 'center'
+                                    }}
+                                >
+                                    <button onClick={triggerBackgroundImageUpload} disabled={uploadingBackground}>
+                                        <i className="fa-solid fa-plus"></i>
+                                    </button>
                                 </div>
                                 <div className={styles.profileHandler}>
-                                    <div className={styles.profilePictureDisplay} style={{backgroundImage: `url(${currentUser?.profileImage})`}}></div>
+                                    <div 
+                                        className={styles.profilePictureDisplay} 
+                                        style={{backgroundImage: `url(${formData.profileImage})`}}
+                                    >
+                                        {uploadingProfile && (
+                                            <div className={styles.uploadingOverlay}>
+                                                <Loader/>
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className={styles.profileMenu}>
                                         <div className={styles.usernameDisplay}>{currentUser?.username || 'Loading...'}</div>
-                                        <button className={styles.profileButton}>Upload Image</button>
+                                        <div className={styles.buttonHolder}>
+                                            <button 
+                                                className={styles.profileButton} 
+                                                onClick={triggerProfileImageUpload}
+                                                disabled={uploadingProfile}
+                                            >
+                                                {uploadingProfile ? 'Uploading...' : 'Upload Image'}
+                                            </button>
+                                            <button 
+                                                className={`${styles.profileButton} ${styles.viewProfile}`} 
+                                                onClick={handleViewProfile}
+                                            >
+                                                View Profile
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <form onSubmit={handleSubmitChanges} className={styles.editArea}>
@@ -226,16 +371,23 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
                                         className={styles.formInput} 
                                         placeholder='Username'
                                         value={formData.username}
-                                        onChange={handleInputChange}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (!val.includes(' ')) {
+                                                handleInputChange(e);
+                                            }
+                                        }}
+                                        maxLength={32}
                                     />
                                     <input 
                                         type="text" 
                                         id="bio" 
                                         name="bio" 
-                                        className={styles.formInput} 
+                                        className={`${styles.formInput} ${styles.formInputBio}`} 
                                         placeholder='Bio'
                                         value={formData.bio}
                                         onChange={handleInputChange}
+                                        maxLength={150}
                                     />
                                     <input 
                                         type="text" 
@@ -245,6 +397,7 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
                                         placeholder='Nickname'
                                         value={formData.nickname}
                                         onChange={handleInputChange}
+                                        maxLength={32}
                                     />
                                     <div className={styles.formButtons}>
                                         <button 

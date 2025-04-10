@@ -86,7 +86,7 @@ export default function Profile({user, currentUser}: AccountSetupProps) {
                 <div className={styles.pageContainer}>
                     <Header user={user} />
                     <div className={styles.profileCard}>
-                        <div className={styles.profileBackgroundImage}>
+                        <div className={styles.profileBackgroundImage} style={{backgroundImage: `url(${profileData?.backgroundImage || `url('../../assets/galaxy.png')`})`}}>
                             {!isLoading ? (
                                 <img 
                                     src={profileData?.profileImage || ""} 
@@ -130,7 +130,7 @@ export default function Profile({user, currentUser}: AccountSetupProps) {
                                 <>
                                     <div className={styles.usernameDisplay}>
                                         <div className={styles.names}>
-                                            <span style={{color: "hsl(0, 0%, 75%)", fontSize: "2rem"}}>{profileData.username}</span>
+                                            <span style={{color: "hsl(0, 0%, 75%)", fontSize: "2rem"}}>{profileData.nickname || profileData.username}</span>
                                             <span style={{color: "hsl(0, 0%, 50%)", fontSize: "1rem"}}>@{profileData.username}</span>
                                         </div>
                                         <div className={styles.rightSide}>
