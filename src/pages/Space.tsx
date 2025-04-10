@@ -37,6 +37,7 @@ export default function Space({ user }: { user: any }) {
     const [loading, setLoading] = useState(false);
     const [onQueue, setOnQueue] = useState(false);
     const [statusMessage, setStatusMessage] = useState("");
+    const [disabled, setDisabled] = useState(false);
 
     const navigate = useNavigate();
 
@@ -118,8 +119,9 @@ export default function Space({ user }: { user: any }) {
                 // Fail Safe Fetch Players
                 // const playersSnap = await getDocs(collection(db, "user"));
 
+                // Latest Fix for Fetching different 5 users;
                 // Fixed - less than 10
-                const q = query(collection(db, "user"), orderBy("username"), limit(10));
+                const q = query(collection(db, "user"), limit(10));
                 const playersSnap = await getDocs(q);
 
                 const playersList = playersSnap.docs.map((doc) => ({
@@ -127,32 +129,41 @@ export default function Space({ user }: { user: any }) {
                     ...doc.data(),
                 }));
 
-                // Select 5 random players, excluding friends
+                console.log(playersList);
+
+                // Select 5 random players, excluding friends and current user
                 const randomFive: string[] = [];
                 const friends: string[] = currentUser?.friends || [];
 
+                // Create a filtered list excluding friends and current user
+                const playersNotFriends = playersList.filter(player =>
+                    !friends.includes(player.id) && player.id !== currentUser?.id
+                );
+
+                // Randomly select from the filtered list
                 while (
                     randomFive.length < 5 &&
-                    playersList.length > randomFive.length
+                    playersNotFriends.length > 0
                 ) {
-                    const randomPlayer = playersList[Math.floor(Math.random() * playersList.length)];
+                    const randomIndex = Math.floor(Math.random() * playersNotFriends.length);
+                    const randomPlayer = playersNotFriends[randomIndex];
 
-                    // Ensure the player is not a friend
-                    if (!friends.includes(randomPlayer.id) && randomPlayer.id !== user.uid && !randomFive.includes(randomPlayer.id)) {
-                        randomFive.push(randomPlayer.id);
-                    }
+                    randomFive.push(randomPlayer.id);
+
+                    // Remove the selected player to avoid duplicates
+                    playersNotFriends.splice(randomIndex, 1);
                 }
 
                 // Set the suggested players
                 setSuggested(randomFive);
 
-    
-                // Fetching player data for the selected random player IDs
-                const playersData = randomFive.map((id: any) => playersList.find((user) => user.id === id));
-                const filteredPlayersData = playersData.filter((player: any) => player !== undefined);
-    
+                // Since we've already filtered the list, we can directly map the player data
+                const filteredPlayersData = randomFive.map((id: any) =>
+                    playersList.find((user) => user.id === id)
+                ).filter((player: any) => player !== undefined);
+
                 setPlayerData(filteredPlayersData);
-    
+
                 // Store the player data and the current date in Firestore cache
                 await setDoc(userDocRef, {
                     lastFetched: today,
@@ -285,6 +296,7 @@ export default function Space({ user }: { user: any }) {
     const handleImmediateQueue = async (gameId: string) => {
         setLoading(true);
         setOnQueue(true);
+        setDisabled(true);
         setStatusMessage("Connecting to the server...");
 
         if (!user || !gameId) {
@@ -309,6 +321,7 @@ export default function Space({ user }: { user: any }) {
                 setOnQueue(false);
             } else {
                 setStatusMessage("Waiting for match...");
+                setDisabled(false);
                 socket.emit("joinQueue", user.uid);
 
                 // Increment game popularity
@@ -326,6 +339,7 @@ export default function Space({ user }: { user: any }) {
             toast.error("Connection failed. Try again.");
             setLoading(false);
             setOnQueue(false);
+            setDisabled(false);
         }
     };
 
@@ -526,6 +540,7 @@ export default function Space({ user }: { user: any }) {
                                                             setOnQueue(false);
                                                             setLoading(false);
                                                         }}
+                                                        disabled={disabled}
                                                     >
                                                         Cancel
                                                     </button>
@@ -549,6 +564,7 @@ export default function Space({ user }: { user: any }) {
                                                     style={{
                                                         backgroundImage: `url(${item.profileImage})`,
                                                     }}
+                                                    onClick={() => {navigate('/profile?id=' + item.id);}}
                                                 >
                                                     <div
                                                         className={
@@ -625,26 +641,16 @@ export default function Space({ user }: { user: any }) {
                                                                     ? styles.playerFriended
                                                                     : styles.playerAdd
                                                             }
-                                                            onClick={
-                                                                currentUser?.friendRequests?.includes(
-                                                                    item.id
-                                                                )
-                                                                    ? () =>
-                                                                          handleAcceptRequest(
-                                                                              item
-                                                                          )
-                                                                    : currentUser?.friends?.includes(
-                                                                          item.id
-                                                                      )
-                                                                    ? () =>
-                                                                          toast(
-                                                                              "friend"
-                                                                          )
-                                                                    : () =>
-                                                                          handleFriendRequest(
-                                                                              item
-                                                                          )
-                                                            }
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (currentUser?.friendRequests?.includes(item.id)) {
+                                                                    handleAcceptRequest(item);
+                                                                } else if (currentUser?.friends?.includes(item.id)) {
+                                                                    navigate(`/profile?id=${item.id}`);
+                                                                } else {
+                                                                    handleFriendRequest(item);
+                                                                }
+                                                            }}
                                                         >
                                                             {currentUser?.friendRequests?.includes(
                                                                 item.id
