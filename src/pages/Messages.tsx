@@ -55,8 +55,11 @@ export default function Messages({user}: {user: any}) {
         });
         return () => unsubscribe();
     }, []);
+
     useEffect(() => {
         if (!user) return;
+
+        // Update data in userChats from user
         const chatRef = doc(db, "userChats", user.uid);
         const unsubscribe = onSnapshot(chatRef, (chatSnapshot) => {
             if (chatSnapshot.exists()) {
@@ -67,14 +70,59 @@ export default function Messages({user}: {user: any}) {
                 setFetchChatData(sortedChats);
             }
         });
+
         return () => unsubscribe();
     }, [user]);
+
     useEffect(() => {
         if (fetchChatData.length === 0) return;
-        // Create an array to store unsubscribe functions
+    
+        const userChatRef = doc(db, "userChats", user.uid);
+    
         const statusListeners = fetchChatData.map((friend) => {
             const statusRef = dbRef(realtimeDb, `users/${friend.friendID}/status`);
+            const latestUserRef = doc(db, "user", friend.friendID);
     
+            // Fetch the latest user data (profileImage & username)
+            getDoc(latestUserRef).then((docSnap) => {
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    const { profileImage, username } = userData;
+    
+                    const needsUpdate =
+                        profileImage !== friend.profileImage ||
+                        username !== friend.username;
+    
+                    if (needsUpdate) {
+                        // 1. Update local state
+                        setFetchChatData((prevData) =>
+                            prevData.map((f) =>
+                                f.friendID === friend.friendID
+                                    ? { ...f, profileImage, username }
+                                    : f
+                            )
+                        );
+    
+                        // 2. Update Firestore userChats
+                        getDoc(userChatRef).then((chatSnap) => {
+                            if (chatSnap.exists()) {
+                                const currentData = chatSnap.data();
+                                const updatedChats = currentData.chatsData.map((chat: any) =>
+                                    chat.friendID === friend.friendID
+                                        ? { ...chat, profileImage, username }
+                                        : chat
+                                );
+    
+                                updateDoc(userChatRef, {
+                                    chatsData: updatedChats,
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+    
+            // Always keep status updated
             return onValue(statusRef, (snapshot) => {
                 setFetchChatData((prevData) =>
                     prevData.map((f) =>
@@ -86,11 +134,11 @@ export default function Messages({user}: {user: any}) {
             });
         });
     
-        // Cleanup function to unsubscribe from each listener when component unmounts
         return () => {
             statusListeners.forEach((unsubscribe) => unsubscribe());
         };
-    }, [fetchChatData]);
+    }, [fetchChatData, user.uid]);
+    
 
     const handleKeyDown = (e: any) => {
         if (e.key === "Enter" && !e.shiftKey) {
