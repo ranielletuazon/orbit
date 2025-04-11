@@ -85,7 +85,10 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
             }
             
             // Create a storage reference
-            const storageRef = ref(storage, `users/${user.uid}/${imageType}/${file.name}`);
+            const storagePath = imageType === 'profileImage' 
+                ? `profileImages/${user.uid}` 
+                : `backgroundImages/${user.uid}`;
+            const storageRef = ref(storage, storagePath);
             
             // Upload file
             await uploadBytes(storageRef, file);

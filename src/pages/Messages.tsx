@@ -5,11 +5,17 @@ import styles from "./css/Messages.module.css";
 import { auth, db, realtimeDb } from '../components/firebase/firebase';
 import { doc, collection, getDocs, getDoc, setDoc, Timestamp, onSnapshot, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { onValue, update } from 'firebase/database';
-import { ref } from 'firebase/database';
+import { ref as dbRef } from 'firebase/database';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import orbit from '../assets/orbit.png';
+import emptyMessage from '../assets/message.png';
+import { toast } from 'sonner';
 
 import Loader from '../components/loader';
 import Header from '../components/Header';
+
+// Initialize Firebase Storage
+const storage = getStorage();
 
 export default function Messages({user}: {user: any}) {
 
@@ -22,6 +28,8 @@ export default function Messages({user}: {user: any}) {
     const [message, setMessage] = useState('');
     // Loading state
     const [isLoading, setIsLoading] = useState(true);
+    // Upload loading state
+    const [isUploading, setIsUploading] = useState(false);
     // State doc ref for currentUser
     const [currentUser, setCurrentUser] = useState<any>(null);
     // State for conversationId
@@ -30,6 +38,11 @@ export default function Messages({user}: {user: any}) {
     const [friendId, setFriendId] = useState<any>(null);
     // Current chat data, selecting a chat will display this messages.
     const [currentChat, setCurrentChat] = useState<any[]>([]);
+    // State for images
+    const [images, setImages] = useState<File[]>([]);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
 
     // Added event listeners for real-time updates
     useEffect(() => {
@@ -60,7 +73,7 @@ export default function Messages({user}: {user: any}) {
         if (fetchChatData.length === 0) return;
         // Create an array to store unsubscribe functions
         const statusListeners = fetchChatData.map((friend) => {
-            const statusRef = ref(realtimeDb, `users/${friend.friendID}/status`);
+            const statusRef = dbRef(realtimeDb, `users/${friend.friendID}/status`);
     
             return onValue(statusRef, (snapshot) => {
                 setFetchChatData((prevData) =>
@@ -216,7 +229,7 @@ export default function Messages({user}: {user: any}) {
         e.target.style.height = "auto"; 
         e.target.style.height = `${e.target.scrollHeight}px`; 
 
-        if(e.target.value.length >= 1 && message.length >= 1) {
+        if((e.target.value.length >= 1 && message.length >= 1) || images.length > 0) {
             setEnableChat(true);
         } else {
             setEnableChat(false);
@@ -226,6 +239,9 @@ export default function Messages({user}: {user: any}) {
     const getCurrentChat = async (chatId: string, friendId: string) => {
         try {
             setConversationId(chatId);
+            setImagePreview(null);
+            setImages([]);
+            setMessage("");
     
             // Get friend doc reference instead of just friendId
             const friendRef = doc(db, "user", friendId);
@@ -293,25 +309,74 @@ export default function Messages({user}: {user: any}) {
         }
     };    
     
+    // Function to upload images to Firebase Storage
+    const uploadImages = async (): Promise<string[]> => {
+        if (images.length === 0) return [];
+        
+        try {
+            setIsUploading(true);
+            const uploadPromises = images.map(async (image, index) => {
+                // Create a unique path for each image
+                const imagePath = `chat_images/${user.uid}/${conversationId}/${Date.now()}_${index}_${image.name}`;
+                const imageRef = storageRef(storage, imagePath);
+                
+                // Upload image to Firebase Storage
+                await uploadBytes(imageRef, image);
+                
+                // Get download URL for the uploaded image
+                const downloadURL = await getDownloadURL(imageRef);
+                return downloadURL;
+            });
+            
+            // Wait for all uploads to complete
+            const imageUrls = await Promise.all(uploadPromises);
+            return imageUrls;
+        } catch (error) {
+            console.error("Error uploading images:", error);
+            return [];
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     // If this runs, the user will send a message in the particular doc ref and update that.
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
     
         try {
-            // Validate required data
-            if (!conversationId || !message.trim()) {
-                console.error("Error: Missing required data");
+            // Validate conversation ID exists
+            if (!conversationId) {
+                console.error("Error: Missing conversation ID");
                 return;
+            }
+            
+            // Check if there's a message or images to send
+            if (message.trim() === '' && images.length === 0) {
+                console.error("Error: No message or images to send");
+                return;
+            }
+            
+            // Upload images if any
+            let imageUrls: string[] = [];
+            if (images.length > 0) {
+                imageUrls = await uploadImages();
             }
     
             const messageRef = doc(db, "userMessages", conversationId);
+            
+            // Create new message object
             const newMessage = {
                 text: message.trim(),
                 senderId: user.uid,
                 timeSent: Timestamp.now(),
+                // Add images array to message if there are any
+                ...(imageUrls.length > 0 && { images: imageUrls })
             };
 
             setMessage(""); //Clear input after sending
+            setImages([]); //Clear images after sending
+            setImagePreview(null);
+            setEnableChat(false);
     
             // Check if the conversation already exists
             const messageSnap = await getDoc(messageRef);
@@ -331,6 +396,15 @@ export default function Messages({user}: {user: any}) {
     
             const selfChatSnap = await getDoc(selfChatRef);
             const friendChatSnap = await getDoc(friendChatRef);
+            
+            // Determine the recent message text to display
+            let recentMessageText = message.trim();
+            if (recentMessageText === '' && imageUrls.length > 0) {
+                recentMessageText = "Sent an image";
+                if (imageUrls.length > 1) {
+                    recentMessageText = `Sent ${imageUrls.length} images`;
+                }
+            }
     
             // For self
             if (selfChatSnap.exists()) {
@@ -339,7 +413,7 @@ export default function Messages({user}: {user: any}) {
                     chat.chatID === conversationId
                         ? { 
                             ...chat, 
-                            recentMessage: message.trim(), 
+                            recentMessage: recentMessageText, 
                             senderId: user.uid, 
                             createdAt: Timestamp.now(), 
                             seen: true 
@@ -359,7 +433,7 @@ export default function Messages({user}: {user: any}) {
                     chat.chatID === conversationId
                         ? { 
                             ...chat, 
-                            recentMessage: message.trim(), 
+                            recentMessage: recentMessageText, 
                             senderId: user.uid, 
                             unreadMessages: (chat.unreadMessages || 0) + 1, 
                             createdAt: Timestamp.now(), 
@@ -379,7 +453,7 @@ export default function Messages({user}: {user: any}) {
                             friendID: user.uid,
                             profileImage: currentUser.profileImage || null,
                             username: currentUser.username || "Unknown",
-                            recentMessage: message.trim(),
+                            recentMessage: recentMessageText,
                             senderId: user.uid,
                             unreadMessages: 1,
                             createdAt: Timestamp.now(),
@@ -404,6 +478,79 @@ export default function Messages({user}: {user: any}) {
         }
     }, [currentChat]);
 
+    useEffect(() => {
+        console.log("Mobile View: ", isMobileView, " User Display Status: ", userDisplay);
+    }, [isMobileView, userDisplay]);
+
+    // Update your handleImageChange function
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        // Limit the file size to 2MB
+        const maxFileSize = 2 * 1024 * 1024;
+        const validFiles = Array.from(files).filter(file => file.size <= maxFileSize);
+
+        if (validFiles.length === 0) {
+            toast.error("Image size is too large. Please select an image less than 2MB.");
+            return;
+        }
+
+        // Process each file
+        Array.from(files).forEach(file => {
+            // Disregard files larger than 2MB (2 * 1024 * 1024 bytes)
+            if (file.size > 2 * 1024 * 1024) return;
+
+            // Check if the file is already in the images array
+            const isDuplicate = images.some(existingFile =>
+                existingFile.name === file.name &&
+                existingFile.size === file.size &&
+                existingFile.type === file.type
+            );
+
+            // Only process non-duplicate files
+            if (!isDuplicate) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    if (reader.result) {
+                        setImages(prev => [...prev, file]);
+                        setImagePreview(reader.result as string); // For showing preview
+                    }
+                };
+                reader.readAsDataURL(file);
+                
+                // Enable chat button if there's at least one image
+                setEnableChat(true);
+            }
+            // If duplicate, just silently ignore it
+        });
+
+        // Reset the file input to allow selecting the same file again if needed
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleRemoveImage = (index: number, e: any) => {
+        e.stopPropagation();
+        
+        const newImages = images.filter((_, i) => i !== index);
+        
+        setImages(newImages);
+        
+        // If no images left and no message text, disable the send button
+        if (newImages.length === 0 && message.trim() === '') {
+            setEnableChat(false);
+        }
+        
+        if (newImages.length === 0) {
+          setImagePreview(null);
+        }
+    };
+
+    useEffect(() => {console.log(message)},[message])
+      
+
     return (
         <div className={styles.container}>
             <div className={styles.page}>
@@ -413,56 +560,60 @@ export default function Messages({user}: {user: any}) {
                         {!userDisplay || !isMobileView ? (
                             <>
                                 {fetchChatData && !isLoading ? (
-                                    <div className={styles.userSection}>
-                                        <div className={styles.accessibility}>
-                                            <button onClick={() => navigate("/space")}><img src={orbit} alt="Logo" className={styles.orbitLogo}/></button>
-                                            <div className={styles.searchBar}>
-                                                <i className="fa-solid fa-magnifying-glass"></i>
-                                                <input className={styles.searchInput} type="search" placeholder="Search..." />
-                                            </div>
-                                        </div>
-                                        {fetchChatData.map((user, key) => (
-                                            <button className={styles.userCard} onClick={() => getCurrentChat(user.chatID, user.friendID)} key={key}> {/* setUserDisplay(true); setCurrentChat(user); */}
-                                                <div className={styles.upSection}>
-                                                    <div className={styles.userIcon}>
-                                                        <div className={styles.userProfileImage} style={{ backgroundImage: `url(${user.profileImage})` }}>
-                                                            <div className={user.status === "online" ? styles.iconOnline : styles.iconOffline}></div>
-                                                        </div>
-                                                        {/* <img src={user.profileImage} className={styles.userProfileImage} alt={`${user.username} profile image`} /> */}
-                                                    </div>
-                                                    <div className={styles.userDiv}>
-                                                        <div className={styles.userName}>{user.username}</div>
-                                                    </div>
-                                                    <div className={styles.lastMessageTime}>{user.createdAt ? getRelativeTime(user.createdAt) : ""}</div>
-                                                </div>
-                                                <div className={styles.downSection} style={{ display: user.recentMessage ? "block" : "none" }}>
-                                                    <div className={styles.lastMessage}>
-                                                        {user.senderId === currentUser.id 
-                                                            ? `You: ${user.recentMessage ? (user.recentMessage.length > 20 ? `${user.recentMessage.slice(0, 20)} . . .` : user.recentMessage) : ""}` 
-                                                            : user.recentMessage ? (user.recentMessage.length > 20 ? `${user.recentMessage.slice(0, 20)} . . .` : user.recentMessage) : ""}
-                                                    </div>
-                                                    <div className={styles.unreadMessageCount} style={{ display: user.unreadMessages > 0 ? "block" : "none" }}>{user.unreadMessages}</div>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : fetchChatData && fetchChatData.length === 0 && !isLoading ? (
                                     <>
                                         <div className={styles.userSection}>
-                                            <div className={styles.searchBar}>
-                                                <i className="fa-solid fa-magnifying-glass"></i>
-                                                <input className={styles.searchInput} type="search" placeholder="Search..." />
+                                            <div className={styles.accessibility}>
+                                                <button onClick={() => navigate("/space")}><img src={orbit} alt="Logo" className={styles.orbitLogo}/></button>
+                                                <div className={styles.searchBar}>
+                                                    <i className="fa-solid fa-magnifying-glass"></i>
+                                                    <input className={styles.searchInput} type="search" placeholder="Search..." />
+                                                </div>
                                             </div>
-                                            <div className={styles.noChatContainer}>
-                                                <p className={styles.noChatMessage}>No chats yet. Try adding friends in Space!</p>
-                                                <button 
-                                                    className={styles.findFriendsButton}
-                                                    onClick={() => navigate("/space")}
-                                                >
-                                                    Find Friends
-                                                </button>
-                                            </div>
+                                            {fetchChatData.length > 0 ? (
+                                                fetchChatData.map((user, key) => (
+                                                    <button className={styles.userCard} onClick={() => getCurrentChat(user.chatID, user.friendID)} key={key}>
+                                                        <div className={styles.upSection}>
+                                                            <div className={styles.userIcon}>
+                                                                <div className={styles.userProfileImage} style={{ backgroundImage: `url(${user.profileImage})` }}>
+                                                                    <div className={user.status === "online" ? styles.iconOnline : styles.iconOffline}></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className={styles.userDiv}>
+                                                                <div className={styles.userName}>{user.username}</div>
+                                                            </div>
+                                                            <div className={styles.lastMessageTime}>{user.createdAt ? getRelativeTime(user.createdAt) : ""}</div>
+                                                        </div>
+                                                        {user.recentMessage && (
+                                                            <div className={styles.downSection}>
+                                                                <div className={styles.lastMessage}>
+                                                                    {user.senderId === currentUser.id 
+                                                                        ? `You: ${user.recentMessage.length > 20 ? `${user.recentMessage.slice(0, 20)}...` : user.recentMessage}` 
+                                                                        : `${user.username}: ${user.recentMessage.length > 20 ? `${user.recentMessage.slice(0, 20)}...` : user.recentMessage}`
+                                                                    }
+                                                                </div>
+                                                                {user.unreadMessages > 0 && (
+                                                                    <div className={styles.unreadMessageCount}>{user.unreadMessages}</div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className={styles.noFriends}>
+                                                    <span>No friends found</span>
+                                                    <button onClick={() => navigate("/conversation")}>Find friends Here</button>
+                                                    <span>or check friend requests</span>
+                                                </div>
+                                            )}
                                         </div>
+                                        {/* Empty State */}
+                                        {!userDisplay && !isMobileView && (
+                                            <>
+                                                <div className={styles.emptyView}>
+                                                    <div className={styles.emptyMessageImage} style={{backgroundImage: `url(${emptyMessage})`}}></div>
+                                                </div>
+                                            </>
+                                        )}
                                     </>
                                 ) : (
                                     <div className={styles.userSection} style={{ justifyContent: "center", width:"100%", alignItems:"center"}}>
@@ -486,48 +637,114 @@ export default function Messages({user}: {user: any}) {
                                             )}
                                             {friendId && 
                                                 <>
-                                                    <div style={{ backgroundImage: `url(${friendId.profileImage})` }} className={styles.userProfileImage}></div>
-                                                    <div className={styles.userDiv}>
+                                                    <div style={{ backgroundImage: `url(${friendId.profileImage})` }} className={styles.userProfileImage} onClick={() => navigate(`/profile?id=${friendId.id}`)}></div>
+                                                    <div className={styles.userDiv} onClick={() => navigate(`/profile?id=${friendId.id}`)}>
                                                         <div className={styles.userName}>{friendId.username}</div>
                                                     </div>
-                                                    <button><i className="fa-solid fa-phone"></i></button>
-                                                    <button onClick={() => setUserDisplay(false)}>
-                                                        <i className="fa-solid fa-ellipsis-vertical" style={{ padding:"0rem 1rem" }}></i>
-                                                    </button>
                                                 </>
                                             }
                                         </div>
-                                        <div className={styles.chatBody} ref={chatBodyRef}>
-                                            {currentChat.map((msg, index) => (
-                                                <div
-                                                    key={index}
-                                                    className={msg.senderId === user.uid ? styles.chatBubbleReceiver : styles.chatBubbleSender}
-                                                >
-                                                    <div className={styles.message}>
-                                                        <div className={styles.text}>{msg.text}</div>
-                                                        <div className={styles.timeSent}>{getRelativeTime(msg.timeSent)}</div>
-                                                    </div>
+                                        {currentChat.length > 0 ? (
+                                            <>
+                                                <div className={styles.chatBody} ref={chatBodyRef}>
+                                                    {currentChat.map((msg, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className={msg.senderId === user.uid ? styles.chatBubbleReceiver : styles.chatBubbleSender}
+                                                        >
+                                                            <div className={styles.message}>
+                                                                <div className={styles.text}>{msg.text}</div>
+                                                                {/* Display images if present */}
+                                                                {msg.images && msg.images.length > 0 && (
+                                                                    <div className={styles.messageImages}>
+                                                                        {msg.images.map((imgUrl: string, imgIndex: number) => (
+                                                                            <img 
+                                                                                key={imgIndex} 
+                                                                                src={imgUrl} 
+                                                                                alt={`Image ${imgIndex}`}
+                                                                                className={styles.messageImage}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                <div className={styles.timeSent}>{getRelativeTime(msg.timeSent)}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                        <form onSubmit={handleSendMessage} className={styles.chatFooter}>
-                                            <button><i className="fa-solid fa-paperclip"></i></button>
-                                            <div className={styles.chatArea}>
-                                            <textarea 
-                                                maxLength={500} 
-                                                rows={1} 
-                                                value={message}
-                                                placeholder="Type something..." 
-                                                onKeyDown={handleKeyDown} 
-                                                onChange={(e) => {
-                                                    setMessage(e.target.value); // Update message state
-                                                    autoResize(e); // Adjust textarea height
-                                                }}
-                                            ></textarea>
-                                                <button><i className="fa-solid fa-face-smile"></i></button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className={styles.emptyChatBody}>
+                                                    <div className={styles.headerChat}>No messages yet</div>
+                                                    <div className={styles.bodyChat}>Start a conversation</div>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div className={styles.chatFooter}>
+                                            {/* if message want to send photo */}
+                                            {images.length > 0 && (
+                                                <>
+                                                    <div className={styles.previewImage}>
+                                                    {images.map((img, index) => (
+                                                        <div key={index} className={styles.imageSample}>
+                                                        <button 
+                                                            className={styles.removeImage} 
+                                                            onClick={(e) => handleRemoveImage(index, e)}
+                                                        >
+                                                            <i className="fa-solid fa-xmark"></i>
+                                                        </button>
+                                                        <img
+                                                            src={URL.createObjectURL(img)}
+                                                            alt={`preview-${index}`}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }}
+                                                        />
+                                                        </div>
+                                                    ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div className={styles.chatDisplay}>
+                                                <button onClick={() => fileInputRef.current?.click()}>
+                                                    <i className="fa-solid fa-image"></i>
+                                                </button>
+                                                <input
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                style={{ display: 'none' }}
+                                                onChange={handleImageChange}
+                                                ref={fileInputRef}
+                                                />
+                                                <div className={styles.chatArea}>
+                                                    <textarea 
+                                                        maxLength={500} 
+                                                        rows={1} 
+                                                        value={message}
+                                                        placeholder="Type something..." 
+                                                        style={{ whiteSpace: 'pre-wrap' }}
+                                                        onKeyDown={handleKeyDown} 
+                                                        onChange={(e) => {
+                                                            setMessage(e.target.value); // Update message state
+                                                            autoResize(e); // Adjust textarea height
+                                                        }}
+                                                    ></textarea>
+                                                    {/* disabled emoji */}
+                                                    {/* <button><i className="fa-solid fa-face-smile"></i></button> */}
+                                                </div>
+                                                <button 
+                                                    className={styles.sendButton} 
+                                                    disabled={!enableChat || isUploading} 
+                                                    onClick={handleSendMessage}
+                                                >
+                                                    {isUploading ? (
+                                                        <i className="fa-solid fa-spinner fa-spin"></i>
+                                                    ) : (
+                                                        <i className="fa-solid fa-paper-plane"></i>
+                                                    )}
+                                                </button>
                                             </div>
-                                            <button className={styles.sendButton} disabled={!enableChat} value={message} type="submit"><i className="fa-solid fa-paper-plane"></i></button>
-                                        </form>
+                                        </div>
                                     </div>
                                 )}
                             </>
@@ -538,4 +755,3 @@ export default function Messages({user}: {user: any}) {
         </div>
     );
 };
-

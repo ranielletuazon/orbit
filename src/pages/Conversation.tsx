@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styles from './css/Conversation.module.css';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../components/firebase/firebase';
+import { auth, db, storage } from '../components/firebase/firebase';
 import { doc, getDoc, collection, getDocs, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'sonner';
 
 import ufo from '../assets/ufo.png';
@@ -24,7 +25,12 @@ export default function Conversation({user}: {user: any}) {
     const [karmaLength, setKarmaLength] = useState(0);
     const [commentState, setCommentState] = useState<string>('');
     const [comments, setComments] = useState<any[]>([]);
-
+    
+    // New state for image upload
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Detects link changes
     useEffect(() => {
@@ -91,6 +97,61 @@ export default function Conversation({user}: {user: any}) {
             }
         };
     }, [user]);
+
+    // Handle image selection
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const selectedFile = files[0];
+            
+            // Check file type
+            if (!selectedFile.type.startsWith('image/')) {
+                toast.error('Please select an image file');
+                return;
+            }
+            
+            // Check file size (5MB limit)
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                toast.error('Image size should be less than 5MB');
+                return;
+            }
+            
+            setImageFile(selectedFile);
+            
+            // Create preview URL
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setImagePreview(event.target?.result as string);
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+    };
+
+    // Clear image selection
+    const clearImageSelection = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    // Upload image to Firebase Storage
+    const uploadImage = async (file: File) => {
+        try {
+            setUploadingImage(true);
+            const storageRef = ref(storage, `posts/${user.uid}/${Date.now()}-${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            setUploadingImage(false);
+            return downloadURL;
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            toast.error("Failed to upload image. Please try again.");
+            setUploadingImage(false);
+            return null;
+        }
+    };
 
     const handleGiveKarma = async (postId: string) => {
         if (!user) return;
@@ -173,11 +234,14 @@ export default function Conversation({user}: {user: any}) {
         const messageInput = form.querySelector('textarea[name="postMessage"]') as HTMLTextAreaElement;
         
         if (!titleInput.value.trim() || !messageInput.value.trim()) {
-            alert("Please fill in all fields");
+            toast.error("Please fill in all fields");
             return;
         }
         
         try {
+            // Set posting state or show loading indicator
+            setUploadingImage(true);
+            
             // Generate a unique ID for the post
             const newPostRef = doc(collection(db, 'userConversation'));
 
@@ -186,10 +250,17 @@ export default function Conversation({user}: {user: any}) {
             
             if (!userSnap.exists()) {
                 console.error("User document not found");
+                setUploadingImage(false);
                 return;
             }
             
             const userData = userSnap.data();
+            
+            // Upload image if selected
+            let imageUrl = null;
+            if (imageFile) {
+                imageUrl = await uploadImage(imageFile);
+            }
             
             // Create the post document
             await setDoc(newPostRef, {
@@ -201,29 +272,23 @@ export default function Conversation({user}: {user: any}) {
                 posterProfileImage: userData.profileImage || '',
                 postTimestamp: Timestamp.now(),
                 karma: [],
-                comments: []
+                comments: [],
+                image: imageUrl, // Add image URL to the post
+                imagePost: Boolean(imageUrl), // Flag to indicate if post has image
             });
             
-            // Add the new post to our state
-            // const newPost = {
-            //     id: newPostRef.id,
-            //     postHeader: titleInput.value.trim(),
-            //     postMessage: messageInput.value.trim(),
-            //     posterUsername: userData.username || 'Anonymous',
-            //     posterProfileImage: userData.profileImage || '',
-            //     postTimestamp: Timestamp.now(),
-            //     karma: [],
-            //     comments: []
-            // };
-            
-            // setDiscussionPosts(prev => [newPost, ...prev]);
-            
-            // Close the create post modal
+            // Reset form and close modal
+            setUploadingImage(false);
             setCreatePost(false);
+            clearImageSelection();
+            
+            // Show success message
+            toast.success("Post created successfully!");
             
         } catch (error) {
             console.error("Error creating post:", error);
-            alert("Failed to create post. Please try again.");
+            toast.error("Failed to create post. Please try again.");
+            setUploadingImage(false);
         }
     };
 
@@ -276,6 +341,9 @@ export default function Conversation({user}: {user: any}) {
             createdAt: new Date(),
             username: "",
             profileImage: "",
+
+            // Added karma to comments
+            karma: [],
         };
     
         setCommentState("");
@@ -449,7 +517,7 @@ export default function Conversation({user}: {user: any}) {
                                     {selectedPost.imagePost ? 
                                         (
                                             <div className={styles.imageHeader}>
-                                                
+                                                <img src={selectedPost.image || ""} alt="" />
                                             </div>
                                         ) : (
                                             <div className={styles.noImage}>
@@ -562,11 +630,60 @@ export default function Conversation({user}: {user: any}) {
                                 </div>
                                 <div className={styles.createPostBody}>
                                     <input type="text" placeholder='Title'/>
-                                    <textarea name="postMessage" id="" placeholder='Write something...'></textarea>
+                                    <textarea name="postMessage" id="" placeholder='Write something...' style={{whiteSpace: 'pre-wrap'}}></textarea>
+                                    {/* Image Preview */}
+                                    {imagePreview && (
+                                        <div className={styles.imagePreviewContainer}>
+                                            <div className={styles.imagePreviewDisplay} style={{backgroundImage: `url(${imagePreview})`}}>
+                                                <button 
+                                                    type="button" 
+                                                    className={styles.removeImageButton}
+                                                    onClick={clearImageSelection}
+                                                >
+                                                    <i className="fa-solid fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className={styles.createPostFooter}>
-                                    <button type="button" onClick={() => setCreatePost(false)} className={styles.footerButton} style={{background: "none", color: 'hsl(0, 0%, 5%)', fontWeight: 'bold'}}>Cancel</button>
-                                    <button type="submit" className={styles.footerButton} style={{background: "#2cc6ff", color: 'hsl(0, 0%, 100%)'}}>Publish</button>
+                                    {/* Image Input */}
+                                    <input 
+                                        ref={fileInputRef}
+                                        type="file" 
+                                        accept="image/*" 
+                                        id="postImage" 
+                                        className={styles.imageInput} 
+                                        onChange={handleImageChange}
+                                        style={{display: 'none'}}
+                                    />
+                                    <button 
+                                        type="button" 
+                                        className={styles.imageAddButton}
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <i className="fa-solid fa-image"></i>
+                                    </button>
+                                    
+                                    <button 
+                                        type="button" 
+                                        onClick={() => {
+                                            setCreatePost(false);
+                                            clearImageSelection();
+                                        }} 
+                                        className={styles.footerButton} 
+                                        style={{background: "none", color: 'hsl(0, 0%, 10%)', fontWeight: 'bold'}}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className={styles.footerButton} 
+                                        style={{background: "#2cc6ff", color: 'hsl(0, 0%, 100%)'}}
+                                        disabled={uploadingImage}
+                                    >
+                                        {uploadingImage ? 'Publishing...' : 'Publish'}
+                                    </button>
                                 </div>
                             </form>
                         </div>
