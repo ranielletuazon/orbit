@@ -62,11 +62,21 @@
 
     .userSection{
         max-width: 30em;
+        overflow-y: auto;
         display: flex;
         flex-direction: column;
         padding: 1rem;
         gap: 1rem;
         border-right: 1px solid hsl(0, 0%, 50%);
+    }
+
+    .userSection::-webkit-scrollbar, .additional::-webkit-scrollbar{
+        width: 0.5rem;
+    }
+    
+    .userSection::-webkit-scrollbar-thumb, .additional::-webkit-scrollbar-thumb{
+        background-color: hsl(0, 0%, 30%);
+        border-radius: 10px;
     }
 
     .chatSection {
@@ -103,6 +113,16 @@
     color: hsl(0, 0%, 75%);
     background: none;
     border: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.userCard:hover{
+    background-color: hsl(0, 0%, 15%);
+}
+
+.userCard:active{
+    background-color: hsl(0, 0%, 40%);
+    transform: scale(0.95);
 }
 
 .upSection{
@@ -128,6 +148,14 @@
     width: 3.5em;
     height: 3.5em;
     position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .profileLetterDisplay{
+        font-size: 1.5rem;
+        color: white;
+    }
 
     .iconOffline, .iconOnline{
         margin: 2px;

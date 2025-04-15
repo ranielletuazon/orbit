@@ -348,9 +348,29 @@ export default function Messages({user}: {user: any}) {
                     setCurrentChat([]);
                 }
             });
-    
-            // Cleanup function to remove listener when component unmounts
-            return () => unsubscribeMessages();
+
+            const unsubscribeSeenStatus = onSnapshot(doc(db, "userChats", user.uid), async (snapshot) => {
+                if (snapshot.exists() && conversationId) {
+                    const chatsData = snapshot.data().chatsData;
+                    const currentChat = chatsData.find((chat: any) => chat.chatID === conversationId);
+
+                    // If there are unread messages and the user is viewing the chat
+                    if (currentChat && currentChat.unreadMessages > 0) {
+                        // Update the "seen" status and reset unread messages
+                        const updatedChats = chatsData.map((chat: any) =>
+                            chat.chatID === conversationId ? { ...chat, unreadMessages: 0, seen: true } : chat
+                        );
+
+                        await updateDoc(doc(db, "userChats", user.uid), { chatsData: updatedChats });
+                    }
+                }
+            });
+
+            // Make sure to clean up this listener along with the messages listener
+            return () => {
+                unsubscribeMessages();
+                unsubscribeSeenStatus();
+            };
     
         } catch (e) {
             console.error("Error fetching chat:", e);
@@ -622,8 +642,9 @@ export default function Messages({user}: {user: any}) {
                                                     <button className={styles.userCard} onClick={() => getCurrentChat(user.chatID, user.friendID)} key={key}>
                                                         <div className={styles.upSection}>
                                                             <div className={styles.userIcon}>
-                                                                <div className={styles.userProfileImage} style={{ backgroundImage: `url(${user.profileImage})` }}>
+                                                                <div className={styles.userProfileImage} style={ user?.profileImage && user?.profileImage.startsWith("https") ? { backgroundImage: `url(${user?.profileImage})` } : {backgroundColor: `${user.profileImage}`}}>
                                                                     <div className={user.status === "online" ? styles.iconOnline : styles.iconOffline}></div>
+                                                                    {user?.profileImage && user?.profileImage.startsWith("https") ? "" : <div className={styles.profileLetterDisplay}>{user?.username?.[0].toUpperCase()}</div>}
                                                                 </div>
                                                             </div>
                                                             <div className={styles.userDiv}>
@@ -685,7 +706,9 @@ export default function Messages({user}: {user: any}) {
                                             )}
                                             {friendId && 
                                                 <>
-                                                    <div style={{ backgroundImage: `url(${friendId.profileImage})` }} className={styles.userProfileImage} onClick={() => navigate(`/profile?id=${friendId.id}`)}></div>
+                                                    <div style={ friendId?.profileImage && friendId?.profileImage.startsWith("https") ? { backgroundImage: `url(${friendId.profileImage})` } : {backgroundColor: `${friendId.profileImage}`}} className={styles.userProfileImage} onClick={() => navigate(`/profile?id=${friendId.id}`)}>
+                                                        <div className={styles.profileLetterDisplay}>{friendId.username && !friendId?.profileImage.startsWith("https") ? friendId.username[0].toUpperCase() : ""}</div>
+                                                    </div>
                                                     <div className={styles.userDiv} onClick={() => navigate(`/profile?id=${friendId.id}`)}>
                                                         <div className={styles.userName}>{friendId.username}</div>
                                                     </div>

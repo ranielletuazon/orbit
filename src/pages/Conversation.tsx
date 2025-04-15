@@ -47,7 +47,7 @@ export default function Conversation({user}: {user: any}) {
                 // Insert confirmCheckFriendOrNot
                 confirmCheckFriendOrNot(postId);
 
-                if (postSnap.exists()){
+                if (postSnap.exists()) {
                     const postData = postSnap.data();
                     if (postData.karma && postData.karma.includes(user.uid)) {
                         setKarmaState(true);
@@ -55,6 +55,9 @@ export default function Conversation({user}: {user: any}) {
                     setKarmaLength(postData.karma?.length || 0);
                     setSelectedPost(postData);
                     setComments(postData.comments || []);
+                    
+                    // Add this line to update user data when post is viewed
+                    updateUserDataInPost(postData);
                 } else {
                     navigate('/404')
                 }
@@ -81,6 +84,9 @@ export default function Conversation({user}: {user: any}) {
                     }));
                     setDiscussionPosts(posts);
                     setLoading(false);
+                    
+                    // Add this to update all posts with latest user data
+                    posts.forEach(post => updateUserDataInPost(post));
                 }, (error) => {
                     console.error("Error fetching posts:", error);
                     setLoading(false);
@@ -433,6 +439,55 @@ export default function Conversation({user}: {user: any}) {
         }
     };
 
+    const updateUserDataInPost = async (post: any) => {
+        try {
+            // Reference to the post creator's user document
+            const latestUserRef = doc(db, 'user', post.posterId);
+            
+            // Fetch the latest user data
+            const docSnap = await getDoc(latestUserRef);
+            
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                const { profileImage, username } = userData;
+                
+                // Check if the data needs updating
+                const needsUpdate = 
+                    profileImage !== post.posterProfileImage ||
+                    username !== post.posterUsername;
+                    
+                if (needsUpdate) {
+                    // Update local state
+                    setDiscussionPosts((prevPosts) =>
+                        prevPosts.map((p) =>
+                            p.id === post.id
+                                ? { ...p, posterProfileImage: profileImage, posterUsername: username }
+                                : p
+                        )
+                    );
+                    
+                    // If this is the selected post, update that too
+                    if (selectedPost && selectedPost.id === post.id) {
+                        setSelectedPost({
+                            ...selectedPost,
+                            posterProfileImage: profileImage,
+                            posterUsername: username
+                        });
+                    }
+                    
+                    // Update Firestore document
+                    const postRef = doc(db, 'userConversation', post.id);
+                    await updateDoc(postRef, {
+                        posterProfileImage: profileImage,
+                        posterUsername: username
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Error updating user data in post:", error);
+        }
+    };
+
     return(
         <>
             <div className={styles.container}>
@@ -463,7 +518,9 @@ export default function Conversation({user}: {user: any}) {
                                                 <div key={post.id || index} className={styles.post} onClick={() => navigate(`/conversation?postId=${post.id}`)}>
                                                     <div className={styles.topContext}>
                                                         <div className={styles.posterDescription}>
-                                                            <div className={styles.posterProfile} style={{backgroundImage: `url(${post.posterProfileImage})`}}></div>
+                                                            <div className={styles.posterProfile} style={ post?.posterProfileImage && post?.posterProfileImage.startsWith("https") ? {backgroundImage: `url(${post.posterProfileImage})`} : {backgroundColor: post.posterProfileImage} }>
+                                                                <div className={styles.profileLetterDisplay}>{post?.posterProfileImage && !post?.posterProfileImage.startsWith("https") ? post.posterUsername.charAt(0).toUpperCase() : ""}</div>
+                                                            </div>
                                                             <div className={styles.posterName}>{post.posterUsername}</div>   
                                                             <div className="" style={{fontWeight: 'bold'}}>·</div>
                                                             <div className={styles.posterTime}>{getRelativeTime(post.postTimestamp)}</div>
@@ -540,7 +597,13 @@ export default function Conversation({user}: {user: any}) {
                                                     </div>
                                                     <div className={styles.bodyPost}>{selectedPost.postMessage}</div>
                                                     <div className={styles.commentSection}>
-                                                        <div className={styles.commentHeader}>{comments.length || 0} {comments.length === 1 ? 'Comment' : 'Comments'}</div>
+                                                        <div className={styles.commentHeader}>
+                                                            <div className={styles.commentKarmaDisplay}>
+                                                                <i className="fa-solid fa-fire"></i>
+                                                                {karmaLength}
+                                                            </div>
+                                                            {comments.length || 0} {comments.length === 1 ? 'Comment' : 'Comments'}
+                                                        </div>
                                                         <form onSubmit={handleComment} className={styles.commentBox}>
                                                             <input type="text" name="comment" id="" placeholder='Write a comment...' value={commentState} onChange={(e) => setCommentState(e.target.value)}/>
                                                             <button type="submit">Comment</button>
@@ -550,7 +613,9 @@ export default function Conversation({user}: {user: any}) {
                                                                 <>
                                                                     {comments.map((comment) => (
                                                                         <div key={comment.id} className={styles.commentCard}>
-                                                                            <div className={styles.commentProfileDisplay} style={{backgroundImage: `url(${comment.profileImage})`}}></div>
+                                                                            <div className={styles.commentProfileDisplay} style={ comment?.profileImage && comment?.profileImage.startsWith("https") ? {backgroundImage: `url(${comment.profileImage})`} : {backgroundColor: `${comment.profileImage}`}}>
+                                                                                <div className={styles.profileLetterDisplay}>{comment?.profileImage && !comment?.profileImage.startsWith("https") ? comment.username.charAt(0).toUpperCase() : ""}</div>
+                                                                            </div>
                                                                             <div className={styles.commentDescription}>
                                                                                 <div className={styles.commenterUsername}>{comment.username}</div>
                                                                                 <div className={styles.commentDate}>
@@ -574,7 +639,9 @@ export default function Conversation({user}: {user: any}) {
                                                 </div>
                                                 <div className={styles.rightSection}>
                                                     <div className={styles.profileDisplaySection}>
-                                                        <div className={styles.profileImageDisplay} style={{backgroundImage: `url(${selectedPost.posterProfileImage})`}}></div>
+                                                        <div className={styles.profileImageDisplay} style={ selectedPost?.posterProfileImage && selectedPost?.posterProfileImage.startsWith("https") ? {backgroundImage: `url(${selectedPost.posterProfileImage})`} : {backgroundColor: `${selectedPost.posterProfileImage}`}}>
+                                                            <div className={styles.profileLetterDisplay}>{selectedPost?.posterProfileImage && !selectedPost?.posterProfileImage.startsWith("https") ? selectedPost.posterUsername.charAt(0).toUpperCase() : ""}</div>
+                                                        </div>
                                                         <div className={styles.profileDescriptionDisplay}>
                                                             <div className={styles.profileUsernameDisplay}>@{selectedPost.posterUsername}</div>
                                                             <div className={styles.datePostedDisplay}>

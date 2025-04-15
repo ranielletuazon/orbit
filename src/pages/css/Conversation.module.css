@@ -118,6 +118,14 @@
                 border-radius: 50%;
                 background-size: cover;
                 background-position: center;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                .profileLetterDisplay{
+                    color: white;
+                    font-size: 1.2rem;
+                }
             }
         }
         
@@ -165,12 +173,12 @@
     .midContext{
         display: flex;
         flex-direction: row;
-        flex: 1;
+        width: 100%;
 
         .left{
             display: flex;
             flex-direction: column;
-            flex: 1;
+            width: 60%;
             gap: .5rem;
             width: 100%;
 
@@ -187,7 +195,7 @@
                 text-overflow: ellipsis;
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical
+                -webkit-box-orient: vertical;
             }
 
             .descriptionFooter{
@@ -375,11 +383,11 @@
         justify-content: center;
         align-items: center;
         background-color: hsl(0, 0%, 10%);
-        border: 1px solid hsl(0, 0%, 30%);
+        outline: 1px solid hsl(0, 0%, 30%);
         border-radius: 10px;
 
         img{
-            max-height: 30em;
+            max-height: auto;
             width: auto;
         }
     }
@@ -430,7 +438,7 @@
 
         .leftSection{
             display: flex;
-            flex: 1;
+            width: 100%;
             flex-direction: column;
 
             .headerPost{
@@ -474,6 +482,17 @@
                 .commentHeader{
                     width: 100%;
                     color: hsl(0, 0%, 30%);
+                    display: flex;
+                    flex-direction: row;
+                    gap: 1rem;
+
+                    .commentKarmaDisplay{
+                        display: flex;
+                        align-items: center;
+                        gap: .5rem;
+                        font-size: 1rem;
+                        color: hsla(16, 100%, 50%, 100%);
+                    }
                 }
 
                 .commentBox{
@@ -485,7 +504,7 @@
                     gap: .5rem;
 
                     input{
-                        flex: 1;
+                        width: 100%;
                         background: none;
                         font-size: 1rem;
                         border-radius: 1rem;
@@ -526,12 +545,20 @@
                             background-position: center;
                             border-radius: 50%;
                             border: 3px solid hsl(0, 0%, 30%);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+
+                            .profileLetterDisplay{
+                                color: white;
+                                font-size: 1.5rem;
+                            }
                         }
     
                         .commentDescription{
                             display: flex;
                             flex-direction: column;
-                            flex: 1;
+                            width: 100%;
                             overflow-wrap: break-word;
     
                             .commenterUsername{
@@ -557,9 +584,9 @@
 
         .rightSection{
             display: flex;
-            width: 30%;
             min-width: 200px;
             flex-direction: column;
+            width: 40%;
             gap: 5px;
 
             .profileDisplaySection{
@@ -580,6 +607,15 @@
                     border-radius: 50%;
                     border: 3px solid hsl(0, 0%, 30%);
                     background-size: cover;
+
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    .profileLetterDisplay{
+                        font-size: 2rem;
+                        color: white;
+                    }
                 }
 
                 .profileDescriptionDisplay{
@@ -626,7 +662,7 @@
 
             .actionButton{
                 background: hsl(0, 0%, 15%);
-                flex: 1;
+                width: 100%;
                 padding: 1rem;
                 display: flex;
                 justify-content: center;
@@ -769,15 +805,7 @@
 
 @media screen and (max-width: 768px) {
     .currentPost {
-        flex-direction: column;
-    }
-    
-    .currentPost .rightSection {
-        width: 100%;
-    }
-    
-    .currentPost .profileDisplaySection {
-        margin-bottom: 1rem;
+        flex-direction: column-reverse;
     }
 }
 
@@ -828,5 +856,107 @@
     
     .commentBox button {
         align-self: flex-end;
+    }
+}
+
+.imageHeader {
+    width: 100%;
+    height: auto;
+    max-height: 50vh; /* Use viewport height for better scaling */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.imageHeader img {
+    max-width: 100%;
+    max-height: 50vh;
+    object-fit: contain;
+}
+
+/* Improve the currentPost container responsiveness */
+.currentPost {
+    width: 100%;
+    max-width: 1000px;
+    gap: 1rem;
+}
+
+/* Enhance media queries */
+@media screen and (max-width: 768px) {
+    .currentPost {
+        flex-direction: column-reverse !important;
+    }
+    
+    .currentPost .rightSection {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .profileDisplaySection {
+        flex-direction: row !important;
+    }
+    
+    .actionsSection {
+        flex-direction: row !important;
+        margin-bottom: 1rem;
+    }
+    
+    .currentPostContainer .imageHeader img {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .headerPost {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .headerPost .headerKarmaDisplay {
+        align-self: flex-end;
+        margin-top: -2rem;
+    }
+    
+    .commentSection .commentBox {
+        flex-direction: column !important;
+        gap: 0.5rem;
+    }
+    
+    .commentSection .commentBox button {
+        align-self: flex-end;
+    }
+    
+    .profileDisplaySection {
+        width: 100%;
+    }
+    
+    .commentCard {
+        flex-direction: column !important;
+        align-items: flex-start;
+    }
+    
+    .commentCard .commentProfileDisplay {
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media screen and (max-width: 910px) {
+    .currentPost{
+        flex-direction: column-reverse !important; 
+    }
+
+    .currentPost .rightSection {
+        width: 100% !important;
+    }
+
+    .headerKarmaDisplay{
+        display: none !important;
+    }
+}
+
+@media screen and (min-width: 910px) {
+    .commentKarmaDisplay{
+        display: none !important;
     }
 }

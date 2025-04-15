@@ -84,7 +84,7 @@ export default function Header({ user }: { user: any }){
                     </div>
                     <div className={styles.menus}>
                         <button onClick={handleLogout} className={styles.menuButton} style={{ color: 'red', textShadow: '0 0 5px red' }}><i className="fa-solid fa-power-off"></i></button>
-                        { profileImageState ? (
+                        { profileImageState && profileImageState.startsWith('https') ? (
                             <>
                                 <button onClick={handleProfileClick} className={styles.profileButton} >
                                     {profileImageState && <img src={profileImageState} alt="Profile" className={styles.profileImage}/>}
@@ -92,7 +92,7 @@ export default function Header({ user }: { user: any }){
                             </>
                         ) : (
                             <button onClick={handleProfileClick} className={styles.profileButton} >
-                                <div className={styles.profileLoad}></div>
+                                <div className={styles.profileLoad} style={{backgroundColor: `${currentUser?.profileImage}`}}>{currentUser?.username ? currentUser?.username[0].toUpperCase() : ""}</div>
                             </button>
                         )}
                     </div>

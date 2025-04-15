@@ -561,114 +561,122 @@ export default function Space({ user }: { user: any }) {
                                                     className={
                                                         styles.playerDisplay
                                                     }
-                                                    style={{
-                                                        backgroundImage: `url(${item.profileImage})`,
-                                                    }}
+                                                    style={
+                                                        item?.profileImage && item?.profileImage.startsWith('https') ? {backgroundImage: `url(${item?.profileImage})`} : {backgroundColor: `${item.profileImage}`}
+                                                    }
                                                     onClick={() => {navigate('/profile?id=' + item.id);}}
                                                 >
-                                                    <div
-                                                        className={
-                                                            styles.statusDisplay
-                                                        }
-                                                        style={{
-                                                            display:
-                                                                item.status ===
-                                                                "online"
-                                                                    ? "block"
-                                                                    : "none",
-                                                        }}
-                                                    ></div>
-                                                    <div
-                                                        className={
-                                                            styles.playerDescription
-                                                        }
-                                                    >
-                                                        <div
-                                                            className={
-                                                                styles.playerUsername
-                                                            }
-                                                        >
-                                                            <b>
-                                                                {item.username},{" "}
-                                                                {item.birthdate &&
-                                                                    Math.floor(
-                                                                        (Date.now() -
-                                                                            new Date(
-                                                                                item.birthdate
-                                                                            ).getTime()) /
-                                                                            (1000 *
-                                                                                60 *
-                                                                                60 *
-                                                                                24 *
-                                                                                365.25)
-                                                                    )}{" "}
-                                                                {item.gender &&
-                                                                item.gender.toLowerCase() ===
-                                                                    "male" ? (
-                                                                    <i
-                                                                        className="fa-solid fa-mars"
-                                                                        style={{
-                                                                            color: "#2cc6ff",
-                                                                            marginLeft:
-                                                                                "0.5rem",
-                                                                        }}
-                                                                    ></i>
-                                                                ) : (
-                                                                    <i
-                                                                        className="fa-solid fa-venus"
-                                                                        style={{
-                                                                            color: "hsl(0, 100%, 70%)",
-                                                                            marginLeft:
-                                                                                "0.5rem",
-                                                                        }}
-                                                                    ></i>
-                                                                )}
-                                                            </b>
-                                                        </div>
-                                                        <button
-                                                            className={
-                                                                currentUser?.friendRequests?.includes(
-                                                                    item.id
-                                                                )
-                                                                    ? styles.acceptRequest
-                                                                    : currentUser?.pendingRequests?.includes(
-                                                                          item.id
-                                                                      )
-                                                                    ? styles.pendingRequest
-                                                                    : currentUser?.friends?.includes(
-                                                                          item.id
-                                                                      )
-                                                                    ? styles.playerFriended
-                                                                    : styles.playerAdd
-                                                            }
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (currentUser?.friendRequests?.includes(item.id)) {
-                                                                    handleAcceptRequest(item);
-                                                                } else if (currentUser?.friends?.includes(item.id)) {
-                                                                    navigate(`/profile?id=${item.id}`);
-                                                                } else {
-                                                                    handleFriendRequest(item);
+                                                    {item?.profileImage && item?.profileImage.startsWith('https') ? (
+                                                        <>
+                                                            <div
+                                                                className={
+                                                                    styles.statusDisplay
                                                                 }
-                                                            }}
-                                                        >
-                                                            {currentUser?.friendRequests?.includes(
-                                                                item.id
-                                                            ) ? (
-                                                                <i className="fa-solid fa-user-check"></i>
-                                                            ) : currentUser?.pendingRequests?.includes(
-                                                                  item.id
-                                                              ) ? (
-                                                                <i className="fa-solid fa-hourglass-half"></i> // Pending request icon
-                                                            ) : currentUser?.friends?.includes(
-                                                                  item.id
-                                                              ) ? (
-                                                                <i className="fa-solid fa-user"></i>
-                                                            ) : (
-                                                                <i className="fa-solid fa-user-plus"></i>
-                                                            )}
-                                                        </button>
-                                                    </div>
+                                                                style={{
+                                                                    display:
+                                                                        item.status ===
+                                                                        "online"
+                                                                            ? "block"
+                                                                            : "none",
+                                                                }}
+                                                            ></div>
+                                                            <div
+                                                                className={
+                                                                    styles.playerDescription
+                                                                }
+                                                            >
+                                                                <div
+                                                                    className={
+                                                                        styles.playerUsername
+                                                                    }
+                                                                >
+                                                                    <b>
+                                                                        {item.username},{" "}
+                                                                        {item.birthdate &&
+                                                                            Math.floor(
+                                                                                (Date.now() -
+                                                                                    new Date(
+                                                                                        item.birthdate
+                                                                                    ).getTime()) /
+                                                                                    (1000 *
+                                                                                        60 *
+                                                                                        60 *
+                                                                                        24 *
+                                                                                        365.25)
+                                                                            )}{" "}
+                                                                        {item.gender &&
+                                                                        item.gender.toLowerCase() ===
+                                                                            "male" ? (
+                                                                            <i
+                                                                                className="fa-solid fa-mars"
+                                                                                style={{
+                                                                                    color: "#2cc6ff",
+                                                                                    marginLeft:
+                                                                                        "0.5rem",
+                                                                                }}
+                                                                            ></i>
+                                                                        ) : (
+                                                                            <i
+                                                                                className="fa-solid fa-venus"
+                                                                                style={{
+                                                                                    color: "hsl(0, 100%, 70%)",
+                                                                                    marginLeft:
+                                                                                        "0.5rem",
+                                                                                }}
+                                                                            ></i>
+                                                                        )}
+                                                                    </b>
+                                                                </div>
+                                                                <button
+                                                                    className={
+                                                                        currentUser?.friendRequests?.includes(
+                                                                            item.id
+                                                                        )
+                                                                            ? styles.acceptRequest
+                                                                            : currentUser?.pendingRequests?.includes(
+                                                                                item.id
+                                                                            )
+                                                                            ? styles.pendingRequest
+                                                                            : currentUser?.friends?.includes(
+                                                                                item.id
+                                                                            )
+                                                                            ? styles.playerFriended
+                                                                            : styles.playerAdd
+                                                                    }
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (currentUser?.friendRequests?.includes(item.id)) {
+                                                                            handleAcceptRequest(item);
+                                                                        } else if (currentUser?.friends?.includes(item.id)) {
+                                                                            navigate(`/profile?id=${item.id}`);
+                                                                        } else {
+                                                                            handleFriendRequest(item);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {currentUser?.friendRequests?.includes(
+                                                                        item.id
+                                                                    ) ? (
+                                                                        <i className="fa-solid fa-user-check"></i>
+                                                                    ) : currentUser?.pendingRequests?.includes(
+                                                                        item.id
+                                                                    ) ? (
+                                                                        <i className="fa-solid fa-hourglass-half"></i> // Pending request icon
+                                                                    ) : currentUser?.friends?.includes(
+                                                                        item.id
+                                                                    ) ? (
+                                                                        <i className="fa-solid fa-user"></i>
+                                                                    ) : (
+                                                                        <i className="fa-solid fa-user-plus"></i>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className={styles.profileLetterDisplay}>{item?.username?.charAt(0).toUpperCase()}</div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             ))}
                                     </div>

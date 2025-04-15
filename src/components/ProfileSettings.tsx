@@ -339,12 +339,15 @@ export default function ProfileSettings({ user, isOpen, onClose }: ProfileSettin
                                 <div className={styles.profileHandler}>
                                     <div 
                                         className={styles.profilePictureDisplay} 
-                                        style={{backgroundImage: `url(${formData.profileImage})`}}
+                                        style={ currentUser?.profileImage && currentUser.profileImage.startsWith('https') ? {backgroundImage: `url(${currentUser.profileImage})`} : {backgroundColor: `${currentUser?.profileImage}`} }
                                     >
                                         {uploadingProfile && (
                                             <div className={styles.uploadingOverlay}>
                                                 <Loader/>
                                             </div>
+                                        )}
+                                        { currentUser?.profileImage && !currentUser.profileImage.startsWith('https') && (
+                                            <div className={styles.profileLoad}>{currentUser.username ? currentUser.username[0].toUpperCase() : "U"}</div>
                                         )}
                                     </div>
                                     <div className={styles.profileMenu}>

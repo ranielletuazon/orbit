@@ -326,6 +326,12 @@
     animation: fadeIn 0.3s ease-in-out;
 }
 
+.profileLoad{
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+}
+
 @media screen and (max-width: 1200px) {
     .modalOverlay .profileCard {
         width: 80%;

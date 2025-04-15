@@ -186,7 +186,80 @@ video{
 .chatSection{
     width: 100%;
     height: 30%;
-    border: 1px solid black;
+    display: flex;
+    flex-direction: column-reverse;
+
+    .formInput{
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: .5rem;
+
+        input{
+            width: 100%;
+            padding: .5rem 1rem;
+            font-size: 1rem;
+            background-color: hsl(0, 0%, 10%);
+            border-radius: 1rem;
+            border: 2px solid hsl(0, 0%, 40%);
+            color: white;
+        }
+
+        button{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: none;
+            border: none;
+
+            i{
+                font-size: 2rem;
+                color: #2cc6ff;
+            }
+        }
+    }
+
+    .chatHolder{
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        overflow-y: auto;
+
+        .chatBox{
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: flex-start;
+            width: 100%;
+            gap: .5rem;
+
+            .userIdentifier{
+                color: white;
+                font-weight: bold;
+                padding: 1px 10px;
+                background-color: hsl(0, 0%, 8%);
+                border-radius: 1rem;
+            }
+
+            .message{
+                margin-top: 2px;
+                color: hsl(0, 0%, 50%);
+                word-break: break-word;
+                line-height: 1.4;
+            }
+        }
+    }
+
+    .chatHolder::-webkit-scrollbar, .additional::-webkit-scrollbar{
+        width: 0.5rem;
+    }
+    
+    .chatHolder::-webkit-scrollbar-thumb, .additional::-webkit-scrollbar-thumb{
+        background-color: hsl(0, 0%, 30%);
+        border-radius: 10px;
+    }
 }
 
 @media screen and (min-height: 1080px) {

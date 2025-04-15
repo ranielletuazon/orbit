@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Loader from "../components/loader";
 import { auth, db } from '../components/firebase/firebase';
-import { getDoc, doc, onSnapshot } from 'firebase/firestore';
+import { getDoc, doc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { io } from "socket.io-client";
 
@@ -28,7 +28,7 @@ export default function Room({ user }: { user: any }) {
     const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
     const [cameraAllowed, setCameraAllowed] = useState<boolean | null>(null);
     const [roomError, setRoomError] = useState<string | null>(null);
-    const [otherUser, setOtherUser] = useState<any | null>(null);
+    const [message, setMessage] = useState('');
     
     // WebRTC state
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -388,6 +388,24 @@ export default function Room({ user }: { user: any }) {
         navigate("/rocket");
     };
 
+    const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+    
+        const messageRef = doc(db, 'userRooms', roomID);
+    
+        try {
+            await updateDoc(messageRef, {
+                messages: arrayUnion({
+                    userId: user.uid,
+                    chat: message,
+                }),
+            });
+            setMessage(''); 
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
+    };
+
     return (
         <>
             {loading ? (
@@ -483,7 +501,20 @@ export default function Room({ user }: { user: any }) {
                                     </div>
                                 </div>
                                 <div className={styles.chatSection}>
-                                    
+                                    <form onSubmit={handleSendMessage} className={styles.formInput}>
+                                        <input type="text" placeholder="Say Hi..." value={message} onChange={(e) => setMessage(e.target.value)}/>
+                                        <button type="submit" className={styles.sendButton}><i className="fa-solid fa-paper-plane"></i></button>
+                                    </form>
+                                    <div className={styles.chatHolder}>
+                                        {roomData.messages.map((item: any, index: number) => (
+                                            <>
+                                                <div className={styles.chatBox} key={index}>
+                                                    <div className={styles.userIdentifier}>{item?.userId && item?.userId === user?.uid ? "You" : "Stranger"}</div>
+                                                    <div className={styles.message}>{item?.chat}</div>
+                                                </div>
+                                            </> 
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>

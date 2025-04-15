@@ -88,11 +88,14 @@ export default function Profile({user, currentUser}: AccountSetupProps) {
                     <div className={styles.profileCard}>
                         <div className={styles.profileBackgroundImage} style={{backgroundImage: `url(${profileData?.backgroundImage || `url('../../assets/galaxy.png')`})`}}>
                             {!isLoading ? (
-                                <img 
-                                    src={profileData?.profileImage || ""} 
-                                    alt="Profile Image" 
-                                    className={styles.profileImage}
-                                />
+                                <>
+                                    <div
+                                        className={styles.profileImage}
+                                        style={ profileData?.profileImage && !profileData?.profileImage.startsWith("https") ? {backgroundColor: `${profileData.profileImage}`} : {backgroundImage: `url(${profileData.profileImage})`} }
+                                    >
+                                        <div className={styles.profileLetterDisplay}>{profileData.username && !profileData.profileImage.startsWith("https") ? profileData.username[0].toUpperCase() : ""}</div>
+                                    </div>
+                                </>
                             ) : ( 
                                 <>
                                     <div className={styles.customLoader}>

@@ -320,7 +320,7 @@ export default function AccountSetup({ user, currentUser }: AccountSetupProps) {
                         selectedGames,
                         userPlatforms: selectedPlatforms,
                         userGenres: selectedGenres,
-                        profileImage: imageUpload,
+                        profileImage: gender === 'male' ? '#2cc6ff' : gender === 'female' ? 'hsl(350, 100%, 60%)' : 'gray',
                     }, { merge: true }),
                 ]),
                 {
@@ -516,7 +516,8 @@ export default function AccountSetup({ user, currentUser }: AccountSetupProps) {
                         ) : activeStep == 4 ? (
                             <>
                                 <div className={styles.additional}>
-                                    <div className={styles.profileImageSection}>
+                                    {/* Removd Profile Image in Requirement */}
+                                    {/* <div className={styles.profileImageSection}>
                                         {image && <button className={styles.removeButton} onClick={() => setImage('')}>Remove</button>}
                                         <div
                                             className={styles.profileImageInput}
@@ -544,7 +545,7 @@ export default function AccountSetup({ user, currentUser }: AccountSetupProps) {
                                             style={{ display: "none" }}
                                             onChange={handleImageUpload}
                                         />
-                                    </div>
+                                    </div> */}
                                     <div className={styles.accountForm}>
                                             <label>Username</label>
                                             <div className={styles.inputForm}>
@@ -565,7 +566,7 @@ export default function AccountSetup({ user, currentUser }: AccountSetupProps) {
                                     </div>
                                     
                                     <div className={styles.lastSection}>
-                                        <button className={styles.finish} disabled={!(image && username && birthdate && gender && !finish)} onClick={handleFinish}>Finish</button>
+                                        <button className={styles.finish} disabled={!(username && birthdate && gender && !finish)} onClick={handleFinish}>Finish</button>
                                     </div>
                                 </div>
                             </>

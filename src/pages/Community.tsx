@@ -282,8 +282,11 @@ export default function Community({user}: {user: any}) {
                                                             <div className={styles.profileSection}>
                                                                 <div
                                                                     className={styles.profileDisplay}
-                                                                    style={user.profileImage ? { backgroundImage: `url(${user.profileImage})` } : {}}
+                                                                    style={ user?.profileImage && user?.profileImage.startsWith("https") ? { backgroundImage: `url(${user?.profileImage})` } : {backgroundColor: `${user.profileImage}`} }
                                                                 >
+                                                                    <div className={styles.profileLetterDisplay}>
+                                                                        {user?.username && !user.profileImage?.startsWith("https") ? user.username[0].toUpperCase() : ""}
+                                                                    </div>
                                                                 </div>
                                                                 <div className={styles.profileInfo}>
                                                                     <div className={styles.profileName}>
@@ -325,8 +328,9 @@ export default function Community({user}: {user: any}) {
                                                             <div className={styles.profileSection}>
                                                                 <div
                                                                     className={styles.profileDisplay}
-                                                                    style={{ backgroundImage: `url(${user.profileImage})` }}
+                                                                    style={ user?.profileImage && user?.profileImage.startsWith("https") ? { backgroundImage: `url(${user?.profileImage})` } : {backgroundColor: `${user?.profileImage}`} }
                                                                 >
+                                                                    <div className={styles.profileLetterDisplay}>{user.username && !user.profileImage?.startsWith("https") ? user.username[0].toUpperCase() : ""}</div>
                                                                 </div>
                                                                 <div className={styles.profileInfo}>
                                                                     <div className={styles.profileName}>
@@ -384,8 +388,11 @@ export default function Community({user}: {user: any}) {
                                                             <div className={styles.profileSection}>
                                                                 <div
                                                                     className={styles.profileDisplay}
-                                                                    style={{ backgroundImage: `url(${user.profileImage})` }}
+                                                                    style={ user?.profileImage && user?.profileImage.startsWith("https") ? { backgroundImage: `url(${user?.profileImage})` } : {backgroundColor: `${user.profileImage}`} }
                                                                 >
+                                                                    <div className={styles.profileLetterDisplay}>
+                                                                        {user?.username && !user.profileImage?.startsWith("https") ? user.username[0].toUpperCase() : ""}
+                                                                    </div>
                                                                 </div>
                                                                 <div className={styles.profileInfo}>
                                                                     <div className={styles.profileName}>

@@ -32,6 +32,9 @@
     object-fit: cover;
     background-color: hsl(0, 0%, 71%);
     border-radius: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .menus{
@@ -60,7 +63,8 @@
     align-items: center;
     border-radius: 50%;
     border: 3px solid #2cc6ff;
-    background: none;
+    color: white;
+    font-size: 1.5rem;
 
     img{
         width: 2rem !important;

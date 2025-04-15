@@ -132,13 +132,21 @@
         gap: 1rem;
 
         .profileDisplay{
+            background-color: hsl(0, 0%, 10%);
             width: 3.5em;
-            background-color: hsl(0, 0%, 5%);
             height: 3.5em;
             border-radius: 50%;
             background-size: cover;
             background-position: center;
             outline: 1px solid grey;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            .profileLetterDisplay{
+                font-size: 2rem;
+                color: white;
+            }
         }
     
         .profileName{
